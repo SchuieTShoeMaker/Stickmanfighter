@@ -1,16 +1,7 @@
-// 🔥 HARD STOP iPAD ZOOM
-document.addEventListener("gesturestart", e => e.preventDefault());
-document.addEventListener("gesturechange", e => e.preventDefault());
-document.addEventListener("gestureend", e => e.preventDefault());
-
-let lastTouch = 0;
-document.addEventListener("touchend", function (e) {
-  let now = new Date().getTime();
-  if (now - lastTouch <= 300) {
-    e.preventDefault();
-  }
-  lastTouch = now;
-}, false);
+// 🔥 NUCLEAR ZOOM FIX
+document.addEventListener("touchstart", e => {
+  e.preventDefault();
+}, { passive: false });
 
 // ===== CANVAS SETUP =====
 const canvas = document.getElementById("game");
@@ -120,15 +111,6 @@ function update() {
       e.y += (dy / dist) * speed;
     }
 
-    if (e.isBoss) {
-      e.y += Math.sin(Date.now() / 200) * 0.5;
-
-      if (Math.random() < 0.002) {
-        e.x = player.x + (Math.random() * 100 - 50);
-        e.y = player.y + (Math.random() * 100 - 50);
-      }
-    }
-
     if (dist < 30) {
       if (e.attackCooldown <= 0) {
         let dmg = e.isBoss ? 10 : 3;
@@ -202,6 +184,8 @@ let joyX = 0;
 let joyY = 0;
 
 joystick.addEventListener("touchmove", e => {
+  e.preventDefault();
+
   const rect = joystick.getBoundingClientRect();
   const touch = e.touches[0];
 
@@ -220,7 +204,7 @@ joystick.addEventListener("touchmove", e => {
 
   stick.style.left = 50 + x - 20 + "px";
   stick.style.top = 50 + y - 20 + "px";
-});
+}, { passive: false });
 
 joystick.addEventListener("touchend", () => {
   joyX = 0;
@@ -229,7 +213,11 @@ joystick.addEventListener("touchend", () => {
   stick.style.top = "30px";
 });
 
-attackBtn.addEventListener("touchstart", attack);
+// 🔥 FIXED ATTACK BUTTON
+attackBtn.addEventListener("touchstart", function(e) {
+  e.preventDefault();
+  attack();
+}, { passive: false });
 
 // ===== START =====
 spawnWave();
