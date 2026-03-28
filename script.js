@@ -45,6 +45,11 @@ document.addEventListener("keydown", (e) => {
 });
 
 function update() {
+  // Movement
+if (keys["ArrowRight"]) player.x += 3;
+if (keys["ArrowLeft"]) player.x -= 3;
+if (keys["ArrowUp"]) player.y -= 3;
+if (keys["ArrowDown"]) player.y += 3;
   enemies = enemies.filter(e => e.hp > 0);
 
   if (enemies.length === 0) {
