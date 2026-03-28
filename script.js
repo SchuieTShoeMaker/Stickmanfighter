@@ -275,13 +275,23 @@ if (keys["w"] && player.onGround && jumpCooldown === 0) {
 if (
   Math.abs(e.x - player.x) < 20 &&
   Math.abs(e.y - player.y) < 30 &&
-  player.onGround && 
+  player.onGround &&
   e.attackCooldown <= 0
-)
-      let dmg = e.isBoss ? (e.stage === 3 ? 20 : 12) : 2;
-      dmg = Math.max(0, dmg - playerArmor);
+) {
+  let dmg = e.isBoss ? (e.stage === 3 ? 20 : 12) : 2;
+  dmg = Math.max(0, dmg - playerArmor);
 
-      player.hp -= dmg;
+  player.hp -= dmg;
+  playerHitTimer = 10;
+
+  let dir = player.x > e.x ? 1 : -1;
+  player.vx += dir * (e.isBoss ? 8 : 4);
+
+  shake = e.isBoss ? 15 : 8;
+
+  e.attackAnim = 10;
+  e.attackCooldown = e.isBoss ? 40 : 25;
+}
       playerHitTimer = 10;
 
       let dir = player.x > e.x ? 1 : -1;
@@ -450,10 +460,16 @@ attackBtn.addEventListener("touchstart",e=>{
   attack();
 },{passive:false});
 
-jumpBtn.addEventListener("touchstart",e=>{
+jumpBtn.addEventListener("touchstart", e => {
   e.preventDefault();
-  if(player.onGround) player.vy=-player.jump;
-},{passive:false});
+
+  if (player.onGround && jumpCooldown === 0) {
+    player.vy = -player.jump;
+    player.onGround = false;
+    jumpCooldown = 10;
+  }
+
+}, { passive: false });
 
 // ===== START =====
 spawnWave();
