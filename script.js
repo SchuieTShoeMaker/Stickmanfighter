@@ -9,7 +9,15 @@ let player = {
   y: 200,
   hp: 100
 };
+let keys = {};
 
+document.addEventListener("keydown", (e) => {
+  keys[e.key] = true;
+});
+
+document.addEventListener("keyup", (e) => {
+  keys[e.key] = false;
+});
 let enemies = [];
 let wave = 1;
 
