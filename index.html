@@ -1,39 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Stickman Game</title>
+  <meta charset="UTF-8">
+
+  <!-- 🚫 Prevent zoom on mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <title>Stickman Combat</title>
+
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<!-- 🎮 GAME CANVAS -->
 <canvas id="game"></canvas>
 
-<!-- SHOP -->
+<!-- 🛒 SHOP -->
 <div id="shop">
-  <h2>🌿 Shop</h2>
+  <h2>🛒 Shop</h2>
+  <p>Money: $<span id="shopMoney">0</span></p>
 
-  <p>Money: <span id="shopMoney">0</span></p>
+  <h3>⚔️ Weapons</h3>
+  <button onclick="setWeapon('sword')">Sword</button>
+  <button onclick="setWeapon('dagger')">Dagger</button>
+  <button onclick="setWeapon('hammer')">Hammer</button>
 
-  <button onclick="buyDamage()">⚔️ Damage +5 ($50)</button>
-  <button onclick="buyArmor()">🛡️ Armor +1 ($100)</button>
-  <button onclick="buyPoison()">☠️ Poison ($150)</button>
+  <h3>🧪 Upgrades</h3>
+  <button onclick="buyDamage()">+ Damage ($50)</button>
+  <button onclick="buyArmor()">+ Armor ($100)</button>
+  <button onclick="buyPoison()">Poison ($150)</button>
 
-  <hr>
-
-  <h3>Weapons</h3>
-  <button onclick="setWeapon('sword')">🗡️ Sword</button>
-  <button onclick="setWeapon('dagger')">⚡ Dagger</button>
-  <button onclick="setWeapon('hammer')">🔨 Hammer</button>
-
-  <br><br>
-  <button onclick="continueGame()">▶ Continue</button>
+  <button onclick="continueGame()">Continue ▶</button>
 </div>
 
-<!-- CONTROLS -->
-<div id="joystick"><div id="stick"></div></div>
+<!-- 🕹️ JOYSTICK -->
+<div id="joystick">
+  <div id="stick"></div>
+</div>
+
+<!-- 🎮 BUTTONS -->
 <button id="attackBtn">⚔️</button>
 <button id="jumpBtn">⬆️</button>
 
+<!-- JS -->
 <script src="script.js"></script>
+
 </body>
 </html>
