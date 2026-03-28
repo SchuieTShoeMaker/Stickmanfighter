@@ -212,12 +212,14 @@ function update() {
   if (abilityTimer > 0) abilityTimer--;
 
 // joystick movement
-player.vx = joyX * player.speed;
+let targetVX = joyX * player.speed;
 
-// keyboard override (PC still works)
-if (keys["a"]) player.vx = -player.speed;
-if (keys["d"]) player.vx = player.speed;
-player.vx += (joyX * player.speed - player.vx) * 0.2;
+// keyboard override
+if (keys["a"]) targetVX = -player.speed;
+if (keys["d"]) targetVX = player.speed;
+
+// smooth movement
+player.vx += (targetVX - player.vx) * 0.2;
 
   player.x += player.vx;
 
