@@ -2,17 +2,77 @@
 <html>
 <head>
   <title>Stickman Game</title>
+
   <style>
     body {
       margin: 0;
-      overflow: hidden;
       background: black;
+      overflow: hidden;
+      font-family: Arial;
+    }
+
+    /* GAME CANVAS */
+    canvas {
+      display: block;
+      background: black;
+    }
+
+    /* JOYSTICK BASE */
+    #joystick {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 100px;
+      height: 100px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 50%;
+      touch-action: none;
+    }
+
+    /* JOYSTICK STICK */
+    #stick {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background: white;
+      border-radius: 50%;
+      left: 30px;
+      top: 30px;
+    }
+
+    /* ATTACK BUTTON */
+    #attackBtn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 80px;
+      height: 80px;
+      background: red;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      color: white;
+      user-select: none;
     }
   </style>
 </head>
 
 <body>
+
+  <!-- 🎮 GAME -->
   <canvas id="game"></canvas>
+
+  <!-- 🕹 JOYSTICK -->
+  <div id="joystick">
+    <div id="stick"></div>
+  </div>
+
+  <!-- ⚔️ ATTACK -->
+  <div id="attackBtn">⚔️</div>
+
+  <!-- SCRIPT -->
   <script src="script.js"></script>
 
 </body>
