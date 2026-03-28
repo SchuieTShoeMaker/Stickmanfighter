@@ -132,3 +132,39 @@ canvas {
 #jumpBtn:active {
   transform: scale(0.9);
 }
+/* ===== GAME OVER ===== */
+#gameOver {
+  display: none;
+
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translateX(-50%);
+
+  background: rgba(0,0,0,0.9);
+  color: white;
+
+  padding: 30px;
+  border-radius: 15px;
+
+  text-align: center;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+#gameOver button {
+  margin-top: 10px;
+  padding: 10px 20px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: #ff4d4d;
+  color: white;
+
+  cursor: pointer;
+}
+
+#gameOver button:hover {
+  background: #ff1a1a;
+}
