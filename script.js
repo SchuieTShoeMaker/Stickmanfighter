@@ -63,6 +63,7 @@ const attackBtn = document.getElementById("attackBtn");
 const jumpBtn = document.getElementById("jumpBtn");
 
 let joyX = 0;
+let jumpCooldown = 0;
 // ===== JOYSTICK CONTROL =====
 let dragging = false;
 
@@ -235,7 +236,11 @@ player.vx += (targetVX - player.vx) * 0.2;
     player.onGround = true;
   }
 
-  if (keys["w"] && player.onGround) player.vy = -player.jump;
+if (keys["w"] && player.onGround && jumpCooldown === 0) {
+  player.vy = -player.jump;
+  player.onGround = false;
+  jumpCooldown = 10;
+}
 
   if (isDashing && abilityTimer <= 0) isDashing = false;
 
@@ -267,7 +272,11 @@ player.vx += (targetVX - player.vx) * 0.2;
     }
 
     // damage
-    if (Math.abs(e.x - player.x) < 20 && e.attackCooldown <= 0) {
+if (
+  Math.abs(e.x - player.x) < 20 &&
+  Math.abs(e.y - player.y) < 30 &&
+  e.attackCooldown <= 0
+)
       let dmg = e.isBoss ? (e.stage === 3 ? 20 : 12) : 2;
       dmg = Math.max(0, dmg - playerArmor);
 
