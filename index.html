@@ -1,44 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Stickman Survival</title>
-  <link rel="stylesheet" href="style.css">
+    <title>Stickman Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #attackBtn {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            padding: 20px;
+            background: red;
+            color: white;
+            font-size: 20px;
+            border-radius: 50%;
+        }
+    </style>
 </head>
 <body>
 
-<!-- ===== MENU ===== -->
-<div id="menu">
-  <h1>Stickman Survival</h1>
-
-  <h2>Select Device</h2>
-  <button onclick="setDevice('mobile')">Mobile</button>
-  <button onclick="setDevice('pc')">PC</button>
-
-  <h2>Select Difficulty</h2>
-  <button onclick="setDifficulty('easy')">Easy</button>
-  <button onclick="setDifficulty('normal')">Normal</button>
-  <button onclick="setDifficulty('hard')">Hard</button>
-
-  <br><br>
-  <button id="startBtn">Start Game</button>
-</div>
-
-<!-- ===== GAME ===== -->
 <canvas id="game"></canvas>
-
-<!-- ===== UI ===== -->
-<div id="ui">
-  <button id="pauseBtn">Pause</button>
-  <button id="restartBtn">Restart</button>
-</div>
-
-<!-- ===== MOBILE CONTROLS ===== -->
-<div id="controls">
-  <div id="joystick">
-    <div id="stick"></div>
-  </div>
-  <button id="attackBtn">⚔️</button>
-</div>
+<div id="attackBtn">⚔️</div>
 
 <script src="script.js"></script>
 </body>
