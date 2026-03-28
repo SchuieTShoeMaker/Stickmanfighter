@@ -23,9 +23,8 @@ let player;
 
 // ===== GAME STATE =====
 let enemies = [];
+let damageTexts = [];
 let wave = 1;
-let attackTimer = 0;
-let shake = 0;
 
 // ===== MENU =====
 function setDevice(d) { device = d; }
@@ -42,17 +41,20 @@ startBtn.onclick = () => {
   startGame();
 };
 
-// ===== START / RESET =====
+// ===== START =====
 function startGame() {
   player = {
     x: 200,
     y: 200,
+    w: 20,
+    h: 20,
     hp: difficulty === "easy" ? 150 : difficulty === "hard" ? 70 : 100,
     vx: 0,
     vy: 0
   };
 
   enemies = [];
+  damageTexts = [];
   wave = 1;
   score = 0;
   gameOver = false;
@@ -63,19 +65,32 @@ function startGame() {
 
 // ===== SPAWN =====
 function spawnWave() {
-  for (let i = 0; i < 3 + wave; i++) {
+  enemies = [];
+
+  let count = 3 + wave;
+
+  for (let i = 0; i < count; i++) {
+    let isBoss = (wave % 5 === 0 && i === 0);
+
     enemies.push({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
-      hp: difficulty === "hard" ? 40 : 25,
-      speed: difficulty === "easy" ? 1.2 : difficulty === "hard" ? 2 : 1.5
+      w: 20,
+      h: 20,
+      hp: isBoss ? 200 : 30,
+      maxHp: isBoss ? 200 : 30,
+      speed: isBoss ? 1.2 : 1.5,
+      isBoss,
+      dashCooldown: 0,
+      phase: 0,
+      hitTimer: 0,
+      attackCooldown: 0
     });
   }
 }
 
 // ===== CONTROLS =====
-let joyX = 0;
-let joyY = 0;
+let joyX = 0, joyY = 0;
 
 const joystick = document.getElementById("joystick");
 const stick = document.getElementById("stick");
@@ -109,7 +124,7 @@ joystick.addEventListener("touchend", () => {
 
 attackBtn.addEventListener("touchstart", attack);
 
-// ===== PC CONTROLS =====
+// ===== PC =====
 window.addEventListener("keydown", e => {
   if (e.key === " ") attack();
 });
@@ -125,7 +140,15 @@ function attack() {
 
     if (dist < 80) {
       e.hp -= 15;
+      e.hitTimer = 5;
       score += 10;
+
+      damageTexts.push({
+        x: e.x,
+        y: e.y,
+        text: "-15",
+        life: 30
+      });
     }
   });
 }
@@ -134,6 +157,7 @@ function attack() {
 function update() {
   if (gameOver || paused) return;
 
+  // player movement
   player.vx += joyX * 0.02;
   player.vy += joyY * 0.02;
   player.vx *= 0.9;
@@ -142,20 +166,50 @@ function update() {
   player.x += player.vx;
   player.y += player.vy;
 
+  // enemies
   enemies.forEach(e => {
     let dx = player.x - e.x;
     let dy = player.y - e.y;
     let dist = Math.sqrt(dx*dx + dy*dy);
 
-    e.x += (dx / dist) * e.speed;
-    e.y += (dy / dist) * e.speed;
+    let speed = e.speed;
 
-    if (dist < 30) {
-      player.hp -= 0.5;
+    if (e.isBoss) {
+      e.phase += 0.05;
+      e.y += Math.sin(e.phase);
+
+      if (e.dashCooldown <= 0) {
+        speed = 6;
+        e.dashCooldown = 120;
+      }
+      e.dashCooldown--;
+    }
+
+    e.x += (dx / dist) * speed;
+    e.y += (dy / dist) * speed;
+
+    // damage player
+    if (dist < 30 && e.attackCooldown <= 0) {
+      let dmg = e.isBoss ? 20 : 5;
+      player.hp -= dmg;
+
+      damageTexts.push({
+        x: player.x,
+        y: player.y,
+        text: "-" + dmg,
+        life: 30
+      });
+
+      e.attackCooldown = 40;
+
       if (player.hp <= 0) {
+        player.hp = 0;
         gameOver = true;
       }
     }
+
+    if (e.attackCooldown > 0) e.attackCooldown--;
+    if (e.hitTimer > 0) e.hitTimer--;
   });
 
   enemies = enemies.filter(e => e.hp > 0);
@@ -164,6 +218,14 @@ function update() {
     wave++;
     spawnWave();
   }
+
+  // damage text
+  damageTexts.forEach(d => {
+    d.y -= 1;
+    d.life--;
+  });
+
+  damageTexts = damageTexts.filter(d => d.life > 0);
 }
 
 // ===== DRAW =====
@@ -175,13 +237,26 @@ function draw() {
   ctx.fillRect(player.x, player.y, 20, 20);
 
   // enemies
-  ctx.fillStyle = "red";
   enemies.forEach(e => {
+    ctx.fillStyle = e.hitTimer ? "white" : (e.isBoss ? "purple" : "red");
     ctx.fillRect(e.x, e.y, 20, 20);
+
+    // hp bar
+    ctx.fillStyle = "black";
+    ctx.fillRect(e.x, e.y - 6, 20, 4);
+
+    ctx.fillStyle = e.isBoss ? "purple" : "lime";
+    ctx.fillRect(e.x, e.y - 6, (e.hp / e.maxHp) * 20, 4);
+  });
+
+  // damage text
+  ctx.fillStyle = "white";
+  damageTexts.forEach(d => {
+    ctx.fillText(d.text, d.x, d.y);
   });
 
   // UI
-  ctx.fillText("HP: " + Math.floor(player.hp), 20, 20);
+  ctx.fillText("HP: " + player.hp, 20, 20);
   ctx.fillText("Wave: " + wave, 20, 40);
   ctx.fillText("Score: " + score, 20, 60);
 
@@ -203,6 +278,6 @@ function gameLoop() {
 }
 gameLoop();
 
-// ===== UI BUTTONS =====
+// ===== UI =====
 pauseBtn.onclick = () => paused = !paused;
 restartBtn.onclick = startGame;
