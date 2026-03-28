@@ -1,59 +1,139 @@
+/* ===== GLOBAL ===== */
 body {
   margin: 0;
-  background: #111;
   overflow: hidden;
 
-  touch-action: none;
+  /* 🌿 Calm sky background */
+  background: linear-gradient(#87ceeb, #e0f7ff);
+
+  font-family: Arial, sans-serif;
+
+  /* 🚫 STOP ZOOM / DOUBLE TAP */
+  touch-action: manipulation;
 }
 
-/* CANVAS */
+/* ===== CANVAS ===== */
 canvas {
   display: block;
-  margin: 0 auto;
-  background: #222;
-  width: 100vw;
-  height: 60vh;
 }
 
-/* CONTROLS */
-#controls {
-  position: fixed;
-  bottom: 40px;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 30px;
+/* ===== SHOP (HAPPY VIBE) ===== */
+#shop {
+  display: none;
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 20px;
+
+  text-align: center;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  border: 2px solid #d0f0ff;
 }
 
-/* JOYSTICK */
+#shop h2 {
+  margin-top: 0;
+  color: #333;
+}
+
+#shop h3 {
+  margin-bottom: 5px;
+  color: #555;
+}
+
+/* Buttons */
+#shop button {
+  display: block;
+  width: 200px;
+  margin: 8px auto;
+  padding: 10px;
+
+  border: none;
+  border-radius: 12px;
+
+  background: #a0e7e5;
+  color: #033;
+
+  font-size: 14px;
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+#shop button:hover {
+  background: #70d6d3;
+  transform: scale(1.05);
+}
+
+#shop button:active {
+  transform: scale(0.95);
+}
+
+/* Money text */
+#shop p {
+  font-weight: bold;
+  color: #333;
+}
+
+/* ===== JOYSTICK ===== */
 #joystick {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+
   width: 100px;
   height: 100px;
-  background: #333;
+
+  background: rgba(0,0,0,0.2);
   border-radius: 50%;
-  position: relative;
+
+  touch-action: none; /* 🚫 stop zoom */
 }
 
-/* STICK */
 #stick {
-  width: 40px;
-  height: 40px;
-  background: #aaa;
-  border-radius: 50%;
   position: absolute;
   left: 30px;
   top: 30px;
+
+  width: 40px;
+  height: 40px;
+
+  background: white;
+  border-radius: 50%;
 }
 
-/* ATTACK BUTTON */
-#attackBtn {
-  font-size: 24px;
-  padding: 20px;
-  border-radius: 50%;
-  background: red;
-  color: white;
-  user-select: none;
+/* ===== BUTTONS ===== */
+#attackBtn, #jumpBtn {
+  position: absolute;
+  bottom: 20px;
 
-  /* 🔥 CRITICAL FIX */
-  touch-action: none;
+  padding: 18px;
+  font-size: 18px;
+
+  border-radius: 50%;
+  border: none;
+
+  background: #ffffff;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+
+  touch-action: manipulation; /* 🚫 stop zoom */
+}
+
+/* Attack button (right) */
+#attackBtn {
+  right: 20px;
+}
+
+/* Jump button (left of attack) */
+#jumpBtn {
+  right: 100px;
+}
+
+/* Button press effect */
+#attackBtn:active, #jumpBtn:active {
+  transform: scale(0.9);
 }
