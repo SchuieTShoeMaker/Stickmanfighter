@@ -3,7 +3,7 @@
 <head>
   <title>Stickman Game</title>
 
-  <!-- 🔥 Disable zoom -->
+  <!-- 🔥 Prevent zoom -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
   <link rel="stylesheet" href="style.css">
@@ -11,19 +11,27 @@
 
 <body>
 
-  <!-- 🎮 GAME -->
+  <!-- 🎮 GAME CANVAS -->
   <canvas id="game"></canvas>
 
   <!-- 🎮 CONTROLS -->
   <div id="controls">
+    
+    <!-- 🕹 JOYSTICK -->
     <div id="joystick">
       <div id="stick"></div>
     </div>
 
-    <!-- 🔥 DIV INSTEAD OF BUTTON -->
-    <div id="attackBtn">⚔️</div>
+    <!-- 🎯 BUTTONS -->
+    <div id="buttons">
+      <button id="attackBtn">⚔️</button>
+      <button id="jumpBtn">⬆️</button>
+    </div>
+
   </div>
 
+  <!-- JS -->
   <script src="script.js"></script>
+
 </body>
 </html>
