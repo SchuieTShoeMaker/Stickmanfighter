@@ -1,129 +1,177 @@
-// ===== CANVAS =====
-const canvas = document.getElementById("gameCanvas");
+// ===== SETUP =====
+const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-// ===== GAME STATE =====
-let enemies = [];
-let bullets = [];
-let gameOver = false;
+canvas.width = innerWidth;
+canvas.height = innerHeight;
 
 // ===== PLAYER =====
 const player = {
-    x: canvas.width / 2,
-    y: canvas.height - 120,
-    size: 30,
-    speed: 5
+    x: 200,
+    y: 400,
+    w: 20,
+    h: 40,
+    hp: 100,
+    vx: 0,
+    vy: 0
 };
+
+// ===== GAME STATE =====
+let enemies = [];
+let damageTexts = [];
+let wave = 1;
+let attackTimer = 0;
+let shake = 0;
+let gameOver = false;
 
 // ===== INPUT =====
 let keys = {};
-
-window.addEventListener("keydown", e => keys[e.key] = true);
-window.addEventListener("keyup", e => keys[e.key] = false);
+addEventListener("keydown", e => keys[e.key] = true);
+addEventListener("keyup", e => keys[e.key] = false);
 
 // ===== ATTACK =====
 function attack() {
-    bullets.push({
-        x: player.x,
-        y: player.y,
-        size: 6,
-        speed: 8
+    if (attackTimer > 0) return;
+
+    attackTimer = 20;
+
+    enemies.forEach(e => {
+        let dx = e.x - player.x;
+        let dy = e.y - player.y;
+        let dist = Math.hypot(dx, dy);
+
+        if (dist < 80) {
+            e.hp -= 20;
+
+            // knockback
+            e.x += dx * 0.3;
+            e.y += dy * 0.3;
+
+            // damage text
+            damageTexts.push({
+                x: e.x,
+                y: e.y,
+                text: "20",
+                life: 30
+            });
+
+            // screen shake
+            shake = 10;
+        }
     });
 }
 
-// mobile button
-const attackBtn = document.getElementById("attackBtn");
-attackBtn.addEventListener("touchstart", attack);
+// mobile
+document.getElementById("attackBtn")
+.addEventListener("touchstart", attack);
 
-// ===== ENEMY SPAWN (WAVES) =====
+// ===== ENEMY SPAWN =====
 function spawnWave() {
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < wave * 2; i++) {
         enemies.push({
             x: Math.random() * canvas.width,
-            y: -Math.random() * 200,
-            size: 20,
-            speed: 2 + Math.random() * 2
+            y: -50,
+            w: 20,
+            h: 20,
+            hp: 40
         });
     }
 
-    // next wave
-    setTimeout(spawnWave, 3000);
+    wave++;
+
+    setTimeout(spawnWave, 4000);
 }
 
 // ===== UPDATE =====
 function update() {
     if (gameOver) return;
 
-    // movement
-    if (keys["ArrowLeft"]) player.x -= player.speed;
-    if (keys["ArrowRight"]) player.x += player.speed;
+    // movement physics
+    if (keys["ArrowLeft"]) player.vx -= 0.5;
+    if (keys["ArrowRight"]) player.vx += 0.5;
 
-    // bullets
-    bullets.forEach((b, bi) => {
-        b.y -= b.speed;
+    player.vx *= 0.9;
+    player.x += player.vx;
 
-        if (b.y < 0) bullets.splice(bi, 1);
-
-        // hit enemies
-        enemies.forEach((e, ei) => {
-            if (
-                b.x < e.x + e.size &&
-                b.x + b.size > e.x &&
-                b.y < e.y + e.size &&
-                b.y + b.size > e.y
-            ) {
-                enemies.splice(ei, 1);
-                bullets.splice(bi, 1);
-            }
-        });
-    });
+    // attack cooldown
+    if (attackTimer > 0) attackTimer--;
 
     // enemies
     enemies.forEach((e, i) => {
-        e.y += e.speed;
+        let dx = player.x - e.x;
+        let dy = player.y - e.y;
+        let dist = Math.hypot(dx, dy);
+
+        e.x += dx / dist * 1.5;
+        e.y += dy / dist * 1.5;
 
         // hit player
-        if (
-            e.x < player.x + player.size &&
-            e.x + e.size > player.x &&
-            e.y < player.y + player.size &&
-            e.y + e.size > player.y
-        ) {
-            gameOver = true;
+        if (dist < 20) {
+            player.hp -= 0.5;
+            shake = 5;
         }
 
-        if (e.y > canvas.height) enemies.splice(i, 1);
+        if (e.hp <= 0) {
+            enemies.splice(i, 1);
+        }
     });
+
+    // damage text
+    damageTexts.forEach((t, i) => {
+        t.y -= 1;
+        t.life--;
+
+        if (t.life <= 0) damageTexts.splice(i, 1);
+    });
+
+    // game over
+    if (player.hp <= 0) {
+        gameOver = true;
+    }
 }
 
 // ===== DRAW =====
 function draw() {
+    ctx.save();
+
+    // screen shake
+    ctx.translate(
+        Math.random() * shake - shake / 2,
+        Math.random() * shake - shake / 2
+    );
+    shake *= 0.9;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // player
     ctx.fillStyle = "white";
-    ctx.fillRect(player.x, player.y, player.size, player.size);
-
-    // bullets
-    ctx.fillStyle = "yellow";
-    bullets.forEach(b => {
-        ctx.fillRect(b.x, b.y, b.size, b.size);
-    });
+    ctx.fillRect(player.x, player.y, player.w, player.h);
 
     // enemies
     ctx.fillStyle = "red";
     enemies.forEach(e => {
-        ctx.fillRect(e.x, e.y, e.size, e.size);
+        ctx.fillRect(e.x, e.y, e.w, e.h);
     });
+
+    // damage text
+    ctx.fillStyle = "yellow";
+    damageTexts.forEach(t => {
+        ctx.fillText(t.text, t.x, t.y);
+    });
+
+    ctx.restore();
+
+    // UI
+    ctx.fillStyle = "white";
+    ctx.fillText("HP: " + Math.floor(player.hp), 20, 30);
+    ctx.fillText("Wave: " + wave, 20, 60);
 
     // game over
     if (gameOver) {
         ctx.fillStyle = "white";
         ctx.font = "40px Arial";
-        ctx.fillText("GAME OVER", canvas.width / 2 - 120, canvas.height / 2);
+        ctx.fillText("GAME OVER", canvas.width/2 - 120, canvas.height/2);
+        ctx.fillText("Tap to restart", canvas.width/2 - 140, canvas.height/2 + 50);
     }
 }
 
@@ -134,7 +182,7 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// ===== RESTART =====
+// restart
 canvas.addEventListener("touchstart", () => {
     if (gameOver) location.reload();
 });
