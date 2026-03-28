@@ -24,6 +24,11 @@ const player = {
 let playerHitTimer = 0;
 let shake = 0;
 
+// ===== NEW EFFECTS =====
+let hitEffects = [];
+let flashTimer = 0;
+let slowMo = 0;
+
 // ===== GAME STATE =====
 let enemies = [];
 let projectiles = [];
@@ -64,6 +69,22 @@ const jumpBtn = document.getElementById("jumpBtn");
 
 let joyX = 0;
 
+// ===== HIT EFFECT =====
+function createHit(x, y) {
+  for (let i = 0; i < 8; i++) {
+    hitEffects.push({
+      x,
+      y,
+      vx: (Math.random() - 0.5) * 6,
+      vy: (Math.random() - 0.5) * 6,
+      life: 20
+    });
+  }
+  flashTimer = 3;
+  shake = 10;
+  slowMo = 5;
+}
+
 // ===== SPAWN =====
 function spawnWave() {
   enemies = [];
@@ -75,16 +96,17 @@ function spawnWave() {
   if (wave % 5 === 0) {
     enemies.push({
       x: canvas.width / 2,
-      w: 60, h: 100,
-      hp: 300, maxHp: 300,
-      speed: 1,
+      w: 60, h: 120,
+      hp: 400, maxHp: 400,
+      speed: 1.5,
       isBoss: true,
       stage: 1,
       poison: 0,
       dead: false,
       attackCooldown: 0,
       attackAnim: 0,
-      walkAnim: 0
+      walkAnim: 0,
+      teleportCooldown: 120
     });
     return;
   }
@@ -133,6 +155,7 @@ function attack() {
       if (Math.abs(e.x - player.x) < 70) {
         e.hp -= playerDamage;
         if (hasPoison) e.poison = 60;
+        createHit(e.x, e.y);
       }
     });
   }
@@ -149,6 +172,7 @@ function attack() {
     enemies.forEach(e => {
       if (Math.abs(e.x - player.x) < 100) {
         e.hp -= playerDamage * 1.5;
+        createHit(e.x, e.y);
       }
     });
   }
@@ -186,6 +210,7 @@ function update() {
 
   if (attackCooldown > 0) attackCooldown--;
   if (abilityTimer > 0) abilityTimer--;
+  if (slowMo > 0) slowMo--;
 
   player.vx = 0;
   if (keys["a"]) player.vx = -player.speed;
@@ -214,47 +239,54 @@ function update() {
     e.y = ground() - e.h;
     e.walkAnim += 0.15;
 
-    if (e.isBoss) {
-      let hp = e.hp / e.maxHp;
-      if (hp < 0.66) e.stage = 2;
-      if (hp < 0.33) e.stage = 3;
-    }
+    let predict = wave > 5 ? player.vx * 10 : 0;
 
-    if (e.x < player.x) e.x += e.speed;
+    if (e.x < player.x + predict) e.x += e.speed;
     else e.x -= e.speed;
 
-    // ranged
+    if (wave > 8) e.speed += 0.02;
+
+    // boss teleport
+    if (e.isBoss) {
+      e.teleportCooldown--;
+      if (e.teleportCooldown <= 0) {
+        e.x = player.x + (Math.random() * 200 - 100);
+        e.teleportCooldown = 120;
+        flashTimer = 5;
+      }
+    }
+
+    // ranged attack
     if (e.type === "ranged") {
       if (e.shootCooldown <= 0) {
         projectiles.push({
           x: e.x,
           y: e.y + 20,
-          vx: player.x > e.x ? 4 : -4,
+          vx: player.x > e.x ? 6 : -6,
           hit: false
         });
         e.shootCooldown = 90;
       } else e.shootCooldown--;
     }
 
-    // damage
     if (Math.abs(e.x - player.x) < 20 && e.attackCooldown <= 0) {
-      let dmg = e.isBoss ? (e.stage === 3 ? 20 : 12) : 2;
+      let dmg = e.isBoss ? 15 : 2;
       dmg = Math.max(0, dmg - playerArmor);
 
       player.hp -= dmg;
       playerHitTimer = 10;
 
+      createHit(player.x, player.y);
+
       let dir = player.x > e.x ? 1 : -1;
       player.vx += dir * (e.isBoss ? 8 : 4);
 
-      shake = e.isBoss ? 15 : 8;
+      shake = 10;
 
-      e.attackAnim = 10;
-      e.attackCooldown = e.isBoss ? 40 : 25;
+      e.attackCooldown = 25;
     }
 
     if (e.attackCooldown > 0) e.attackCooldown--;
-    if (e.attackAnim > 0) e.attackAnim--;
 
     if (e.poison > 0) {
       e.hp -= 0.3;
@@ -269,21 +301,29 @@ function update() {
 
   enemies = enemies.filter(e => e.hp > 0);
 
-  // ===== PROJECTILES =====
+  // projectiles
   projectiles.forEach(p => {
     p.x += p.vx;
 
     if (Math.abs(p.x - player.x) < 10 &&
         Math.abs(p.y - player.y) < 20) {
       player.hp -= 5;
-      shake = 5;
+      createHit(player.x, player.y);
       p.hit = true;
     }
   });
 
   projectiles = projectiles.filter(p => !p.hit && p.x > 0 && p.x < canvas.width);
 
-  // ===== SHOP =====
+  // hit particles
+  hitEffects.forEach(h => {
+    h.x += h.vx;
+    h.y += h.vy;
+    h.life--;
+  });
+  hitEffects = hitEffects.filter(h => h.life > 0);
+
+  // shop
   if (enemies.length === 0 && !inShop) {
     inShop = true;
     document.getElementById("shop").style.display = "block";
@@ -291,36 +331,39 @@ function update() {
   }
 
   if (player.hp <= 0) {
-    alert("Game Over");
-    location.reload();
+    document.getElementById("gameOver").style.display = "block";
+    inShop = true;
   }
 }
 
-// ===== DRAW CATNAP =====
+// ===== DRAW CATNAP (SCARY) =====
 function drawCatnap(e) {
   let x = e.x;
-  let y = e.y + Math.sin(Date.now()/200)*5;
+  let y = e.y;
 
-  ctx.fillStyle = "rgba(80,0,120,0.3)";
+  ctx.fillStyle = "rgba(50,0,80,0.4)";
   ctx.beginPath();
-  ctx.arc(x+30,y+50,70,0,Math.PI*2);
+  ctx.arc(x + 30, y + 50, 90, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = "#4b0082";
+  ctx.fillStyle = "#2b0040";
   ctx.beginPath();
-  ctx.ellipse(x+30,y+50,25,35,0,0,Math.PI*2);
+  ctx.ellipse(x + 30, y + 60, 25, 50, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = "black";
+  ctx.strokeStyle = "#2b0040";
+  ctx.lineWidth = 6;
   ctx.beginPath();
-  ctx.arc(x+20,y+40,6,0,Math.PI*2);
-  ctx.arc(x+40,y+40,6,0,Math.PI*2);
-  ctx.fill();
+  ctx.moveTo(x + 30, y + 60);
+  ctx.lineTo(x + 5, y + 120);
+  ctx.moveTo(x + 30, y + 60);
+  ctx.lineTo(x + 55, y + 120);
+  ctx.stroke();
 
   ctx.fillStyle = "hotpink";
   ctx.beginPath();
-  ctx.arc(x+20,y+40,2,0,Math.PI*2);
-  ctx.arc(x+40,y+40,2,0,Math.PI*2);
+  ctx.arc(x + 20, y + 40, 5, 0, Math.PI * 2);
+  ctx.arc(x + 40, y + 40, 5, 0, Math.PI * 2);
   ctx.fill();
 }
 
@@ -369,27 +412,51 @@ function draw(){
     player.attackAnim
   );
 
-  if(player.attackAnim>0)player.attackAnim--;
+  // weapon visuals
+  if (weapon === "sword" && player.attackAnim > 0) {
+    ctx.beginPath();
+    ctx.arc(player.x + 10, player.y + 20, 30, -0.5, 0.5);
+    ctx.stroke();
+  }
 
-  // enemies
+  if (weapon === "dagger" && isDashing) {
+    ctx.fillStyle="rgba(0,255,255,0.3)";
+    ctx.fillRect(player.x-15,player.y,50,player.h);
+  }
+
+  if (weapon === "hammer" && abilityTimer > 0) {
+    ctx.beginPath();
+    ctx.arc(player.x+10,player.y+30,80,0,Math.PI*2);
+    ctx.fill();
+  }
+
   enemies.forEach(e=>{
     if(e.isBoss) drawCatnap(e);
     else{
-      let color="red";
-      if(e.type==="fast") color="orange";
-      if(e.type==="tank") color="blue";
-      if(e.type==="ranged") color="yellow";
+      drawStickman(e.x,e.y,e.w,e.h,"red",e.walkAnim,e.attackAnim);
 
-      drawStickman(e.x,e.y,e.w,e.h,color,e.walkAnim,e.attackAnim);
-
-      if(e.poison>0){
-        ctx.fillStyle="rgba(0,255,0,0.3)";
-        ctx.fillRect(e.x,e.y,e.w,e.h);
+      if(e.type==="ranged"){
+        ctx.strokeStyle="brown";
+        ctx.beginPath();
+        ctx.arc(e.x+10,e.y+20,10,-1,1);
+        ctx.stroke();
       }
     }
   });
 
+  // particles
+  ctx.fillStyle="orange";
+  hitEffects.forEach(h=>{
+    ctx.fillRect(h.x,h.y,3,3);
+  });
+
   ctx.restore();
+
+  if (flashTimer > 0) {
+    ctx.fillStyle="rgba(255,255,255,0.2)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    flashTimer--;
+  }
 
   ctx.fillStyle="white";
   ctx.fillText("Wave: "+wave,10,20);
@@ -401,7 +468,7 @@ function draw(){
 function gameLoop(){
   update();
   draw();
-  requestAnimationFrame(gameLoop);
+  setTimeout(gameLoop, slowMo>0 ? 40 : 16);
 }
 
 // ===== CONTROLS =====
