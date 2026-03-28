@@ -96,3 +96,38 @@ function gameLoop() {
 
 spawnWave();
 gameLoop();
+const joystick = document.getElementById("joystick");
+const stick = document.getElementById("stick");
+const attackBtn = document.getElementById("attackBtn");
+
+let joyX = 0;
+let joyY = 0;
+
+joystick.addEventListener("touchmove", (e) => {
+  const rect = joystick.getBoundingClientRect();
+  const touch = e.touches[0];
+
+  let x = touch.clientX - rect.left - 50;
+  let y = touch.clientY - rect.top - 50;
+
+  const dist = Math.sqrt(x * x + y * y);
+  if (dist > 40) {
+    x = (x / dist) * 40;
+    y = (y / dist) * 40;
+  }
+
+  joyX = x;
+  joyY = y;
+
+  stick.style.left = 50 + x - 20 + "px";
+  stick.style.top = 50 + y - 20 + "px";
+});
+
+joystick.addEventListener("touchend", () => {
+  joyX = 0;
+  joyY = 0;
+  stick.style.left = "30px";
+  stick.style.top = "30px";
+});
+
+attackBtn.addEventListener("touchstart", attack);
