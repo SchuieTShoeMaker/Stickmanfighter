@@ -297,7 +297,6 @@ if (
   e.attackAnim = 10;
   e.attackCooldown = e.isBoss ? 40 : 25;
 }
-  dmg = Math.max(0, dmg - playerArmor);
 
   player.hp -= dmg;
   playerHitTimer = 10;
