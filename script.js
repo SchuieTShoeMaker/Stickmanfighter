@@ -24,11 +24,11 @@ let wave = 1;
 let attackTimer = 0;
 let damageTexts = [];
 
-// ===== SPAWN ENEMIES / BOSS =====
+// ===== SPAWN =====
 function spawnWave() {
   enemies = [];
 
-  // 🎯 BOSS EVERY 20 WAVES
+  // 🔥 Boss every 20 waves
   if (wave % 20 === 0) {
     enemies.push({
       x: canvas.width / 2,
@@ -84,15 +84,12 @@ function attack() {
 
 // ===== UPDATE =====
 function update() {
-  // Player movement
   player.x += joyX * 0.2;
   player.y += joyY * 0.2;
 
-  // Stay in bounds
   player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
   player.y = Math.max(0, Math.min(canvas.height - player.h, player.y));
 
-  // Enemy movement
   enemies.forEach(e => {
     const dx = player.x - e.x;
     const dy = player.y - e.y;
@@ -104,20 +101,18 @@ function update() {
     }
   });
 
-  // Remove dead enemies
   enemies = enemies.filter(e => e.hp > 0);
 
-  // Next wave
   if (enemies.length === 0) {
     wave++;
     spawnWave();
   }
 
-  // Damage text
   damageTexts.forEach(d => {
     d.y -= 1;
     d.life--;
   });
+
   damageTexts = damageTexts.filter(d => d.life > 0);
 }
 
@@ -126,24 +121,20 @@ function drawStickman(x, y, isBoss = false) {
   ctx.strokeStyle = isBoss ? "purple" : "white";
   ctx.lineWidth = isBoss ? 4 : 2;
 
-  // Head
   ctx.beginPath();
   ctx.arc(x, y - 15, isBoss ? 12 : 8, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Body
   ctx.beginPath();
   ctx.moveTo(x, y - 5);
   ctx.lineTo(x, y + 20);
   ctx.stroke();
 
-  // Arms
   ctx.beginPath();
   ctx.moveTo(x - 10, y + 5);
   ctx.lineTo(x + 10, y + 5);
   ctx.stroke();
 
-  // Legs
   ctx.beginPath();
   ctx.moveTo(x, y + 20);
   ctx.lineTo(x - 10, y + 35);
@@ -167,7 +158,6 @@ function draw() {
     }
 
     drawStickman(e.x + e.w / 2, e.y + 20, e.isBoss);
-
     ctx.globalAlpha = 1;
 
     // Health bar
@@ -212,7 +202,7 @@ function draw() {
   }
 }
 
-// ===== GAME LOOP =====
+// ===== LOOP =====
 function gameLoop() {
   update();
   draw();
@@ -255,7 +245,7 @@ joystick.addEventListener("touchend", () => {
   stick.style.top = "30px";
 });
 
-// Attack
+// Attack button
 attackBtn.addEventListener("touchstart", attack);
 
 // ===== START =====
