@@ -19,23 +19,30 @@ canvas.height = innerHeight;
 
 // ===== PLAYER =====
 const player = {
-  x: 200, y: 200, w: 20, h: 40,
-  hp: 100, vx: 0, vy: 0
+  x: 200,
+  y: 200,
+  w: 20,
+  h: 40,
+  hp: 100,
+  vx: 0,
+  vy: 0
 };
 
-// ===== STATE =====
+// ===== GAME STATE =====
 let enemies = [];
 let damageTexts = [];
 let wave = 1;
 let attackTimer = 0;
 let shake = 0;
 
-// ===== START BUTTON =====
+// ===== START GAME =====
 startBtn.addEventListener("click", () => {
   menu.style.display = "none";
   canvas.style.display = "block";
 
-  if (device === "mobile") controls.style.display = "flex";
+  if (device === "mobile") {
+    controls.style.display = "flex";
+  }
 
   applyDifficulty();
   spawnWave();
@@ -52,7 +59,8 @@ function applyDifficulty() {
 function spawnWave() {
   enemies = [];
 
-  let hp = 30, speed = 1.5;
+  let hp = 30;
+  let speed = 1.5;
 
   if (difficulty === "easy") { hp = 20; speed = 1.2; }
   if (difficulty === "hard") { hp = 40; speed = 2; }
@@ -65,7 +73,8 @@ function spawnWave() {
     enemies.push({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
-      w: 20, h: 40,
+      w: 20,
+      h: 40,
       hp: isBoss ? 200 : hp,
       maxHp: isBoss ? 200 : hp,
       speed: isBoss ? 1.2 : speed,
@@ -87,7 +96,7 @@ function attack() {
   enemies.forEach(e => {
     const dx = e.x - player.x;
     const dy = e.y - player.y;
-    const dist = Math.sqrt(dx*dx + dy*dy);
+    const dist = Math.sqrt(dx * dx + dy * dy);
 
     if (dist < 80) {
       e.hp -= 15;
@@ -96,7 +105,12 @@ function attack() {
       e.x += (dx / dist) * 20;
       e.y += (dy / dist) * 20;
 
-      damageTexts.push({ x:e.x, y:e.y, text:"-15", life:30 });
+      damageTexts.push({
+        x: e.x,
+        y: e.y,
+        text: "-15",
+        life: 30
+      });
     }
   });
 }
@@ -105,6 +119,7 @@ function attack() {
 function update() {
   if (gameOver) return;
 
+  // Movement
   player.vx += joyX * 0.02;
   player.vy += joyY * 0.02;
   player.vx *= 0.9;
@@ -113,20 +128,21 @@ function update() {
   player.x += player.vx;
   player.y += player.vy;
 
-  player.x = Math.max(0, Math.min(canvas.width-player.w, player.x));
-  player.y = Math.max(0, Math.min(canvas.height-player.h, player.y));
+  // Boundaries
+  player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
+  player.y = Math.max(0, Math.min(canvas.height - player.h, player.y));
 
   enemies.forEach(e => {
     let dx = player.x - e.x;
     let dy = player.y - e.y;
-    let dist = Math.sqrt(dx*dx + dy*dy);
+    let dist = Math.sqrt(dx * dx + dy * dy);
 
     if (dist > 0) {
       let speed = e.speed;
 
       if (e.isBoss) {
         e.phase += 0.05;
-        speed = 0.6 + Math.sin(Date.now()/200)*0.4;
+        speed = 0.6 + Math.sin(Date.now() / 200) * 0.4;
         e.y += Math.sin(e.phase);
 
         if (e.dashCooldown <= 0) {
@@ -136,10 +152,11 @@ function update() {
         e.dashCooldown--;
       }
 
-      e.x += (dx/dist)*speed;
-      e.y += (dy/dist)*speed;
+      e.x += (dx / dist) * speed;
+      e.y += (dy / dist) * speed;
     }
 
+    // Damage player
     if (dist < 35 && e.attackCooldown <= 0) {
       let dmg = e.isBoss ? 20 : 4;
       player.hp -= dmg;
@@ -150,7 +167,12 @@ function update() {
         gameOver = true;
       }
 
-      damageTexts.push({ x:player.x, y:player.y, text:"-"+dmg, life:30 });
+      damageTexts.push({
+        x: player.x,
+        y: player.y,
+        text: "-" + dmg,
+        life: 30
+      });
 
       e.attackCooldown = e.isBoss ? 20 : 40;
     }
@@ -166,69 +188,79 @@ function update() {
     spawnWave();
   }
 
-  damageTexts.forEach(d => { d.y -= 1; d.life--; });
+  damageTexts.forEach(d => {
+    d.y -= 1;
+    d.life--;
+  });
+
   damageTexts = damageTexts.filter(d => d.life > 0);
 }
 
 // ===== DRAW =====
 function draw() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   ctx.save();
-  ctx.translate(Math.random()*shake-shake/2, Math.random()*shake-shake/2);
+  ctx.translate(
+    Math.random() * shake - shake / 2,
+    Math.random() * shake - shake / 2
+  );
 
-  drawStickman(player.x, player.y, player.w, player.h, "white");
+  // Player
+  drawStickman(player.x, player.y, "white");
 
+  // Enemies
   enemies.forEach(e => {
     if (e.isBoss) drawBoss(e);
-    else drawStickman(e.x, e.y, e.w, e.h, e.hitTimer ? "white":"red");
+    else drawStickman(e.x, e.y, e.hitTimer ? "white" : "red");
 
-    ctx.fillStyle="black";
-    ctx.fillRect(e.x, e.y-8, e.w,4);
+    ctx.fillStyle = "black";
+    ctx.fillRect(e.x, e.y - 8, e.w, 4);
 
-    ctx.fillStyle=e.isBoss?"purple":"lime";
-    ctx.fillRect(e.x, e.y-8,(e.hp/e.maxHp)*e.w,4);
+    ctx.fillStyle = e.isBoss ? "purple" : "lime";
+    ctx.fillRect(e.x, e.y - 8, (e.hp / e.maxHp) * e.w, 4);
   });
 
   ctx.restore();
-  if (shake>0) shake--;
+  if (shake > 0) shake--;
 
-  ctx.fillStyle="white";
-  ctx.fillText("Wave: "+wave,10,20);
-  ctx.fillText("HP: "+player.hp,10,40);
+  ctx.fillStyle = "white";
+  ctx.fillText("Wave: " + wave, 10, 20);
+  ctx.fillText("HP: " + player.hp, 10, 40);
 
   if (gameOver) {
-    ctx.font="40px Arial";
-    ctx.fillText("GAME OVER", canvas.width/2-140, canvas.height/2);
-    ctx.font="20px Arial";
-    ctx.fillText("Tap to Restart", canvas.width/2-80, canvas.height/2+40);
+    ctx.font = "40px Arial";
+    ctx.fillText("GAME OVER", canvas.width / 2 - 140, canvas.height / 2);
+    ctx.font = "20px Arial";
+    ctx.fillText("Tap to Restart", canvas.width / 2 - 80, canvas.height / 2 + 40);
   }
 }
 
 // ===== DRAW HELPERS =====
-function drawStickman(x,y,w,h,color){
-  ctx.strokeStyle=color;
+function drawStickman(x, y, color) {
+  ctx.strokeStyle = color;
   ctx.beginPath();
-  ctx.arc(x+w/2,y+10,6,0,Math.PI*2);
+  ctx.arc(x + 10, y + 10, 6, 0, Math.PI * 2);
   ctx.stroke();
 }
 
-function drawBoss(e){
-  let cx=e.x+e.w/2, cy=e.y+e.h/2;
+function drawBoss(e) {
+  let cx = e.x + e.w / 2;
+  let cy = e.y + e.h / 2;
 
-  ctx.fillStyle="rgba(180,0,255,0.25)";
+  ctx.fillStyle = "rgba(180,0,255,0.25)";
   ctx.beginPath();
-  ctx.arc(cx,cy,70,0,Math.PI*2);
+  ctx.arc(cx, cy, 70, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle=e.hitTimer?"white":"purple";
+  ctx.fillStyle = e.hitTimer ? "white" : "purple";
   ctx.beginPath();
-  ctx.ellipse(cx,cy,35,50,0,0,Math.PI*2);
+  ctx.ellipse(cx, cy, 35, 50, 0, 0, Math.PI * 2);
   ctx.fill();
 }
 
 // ===== LOOP =====
-function gameLoop(){
+function gameLoop() {
   update();
   draw();
   requestAnimationFrame(gameLoop);
@@ -239,31 +271,42 @@ const joystick = document.getElementById("joystick");
 const stick = document.getElementById("stick");
 const attackBtn = document.getElementById("attackBtn");
 
-let joyX=0, joyY=0;
+let joyX = 0;
+let joyY = 0;
 
-joystick.addEventListener("touchmove", e=>{
-  const rect=joystick.getBoundingClientRect();
-  const t=e.touches[0];
-  let x=t.clientX-rect.left-50;
-  let y=t.clientY-rect.top-50;
-  let dist=Math.sqrt(x*x+y*y);
-  if(dist>40){x=x/dist*40;y=y/dist*40;}
-  joyX=x; joyY=y;
-  stick.style.left=50+x-20+"px";
-  stick.style.top=50+y-20+"px";
+joystick.addEventListener("touchmove", e => {
+  const rect = joystick.getBoundingClientRect();
+  const touch = e.touches[0];
+
+  let x = touch.clientX - rect.left - 50;
+  let y = touch.clientY - rect.top - 50;
+
+  let dist = Math.sqrt(x * x + y * y);
+
+  if (dist > 40) {
+    x = (x / dist) * 40;
+    y = (y / dist) * 40;
+  }
+
+  joyX = x;
+  joyY = y;
+
+  stick.style.left = 50 + x - 20 + "px";
+  stick.style.top = 50 + y - 20 + "px";
 });
 
-joystick.addEventListener("touchend", ()=>{
-  joyX=0; joyY=0;
-  stick.style.left="30px";
-  stick.style.top="30px";
+joystick.addEventListener("touchend", () => {
+  joyX = 0;
+  joyY = 0;
+  stick.style.left = "30px";
+  stick.style.top = "30px";
 });
 
-canvas.addEventListener("touchstart", ()=>{
-  if(gameOver) location.reload();
+canvas.addEventListener("touchstart", () => {
+  if (gameOver) location.reload();
 });
 
 attackBtn.addEventListener("touchstart", attack);
 
-// ===== START =====
+// ===== START LOOP =====
 gameLoop();
