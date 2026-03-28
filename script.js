@@ -74,7 +74,20 @@ function draw() {
   ctx.fillStyle = "white";
   ctx.fillText("Wave: " + wave, 10, 20);
 }
+function move(direction) {
+  if (direction === "left") player.x -= 10;
+  if (direction === "right") player.x += 10;
+  if (direction === "up") player.y -= 10;
+  if (direction === "down") player.y += 10;
+}
 
+function attack() {
+  enemies.forEach(enemy => {
+    if (Math.abs(enemy.x - player.x) < 50) {
+      enemy.hp -= 10;
+    }
+  });
+}
 function gameLoop() {
   update();
   draw();
