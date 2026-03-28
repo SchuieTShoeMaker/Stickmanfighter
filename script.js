@@ -1,3 +1,7 @@
+// 🔥 EXTRA iPad zoom prevention
+document.addEventListener("gesturestart", function (e) {
+  e.preventDefault();
+});
 // ===== CANVAS SETUP =====
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
