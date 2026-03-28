@@ -298,27 +298,6 @@ if (
   e.attackCooldown = e.isBoss ? 40 : 25;
 }
 
-  player.hp -= dmg;
-  playerHitTimer = 10;
-
-  let dir = player.x > e.x ? 1 : -1;
-  player.vx += dir * (e.isBoss ? 8 : 4);
-
-  shake = e.isBoss ? 15 : 8;
-
-  e.attackAnim = 10;
-  e.attackCooldown = e.isBoss ? 40 : 25;
-}
-      playerHitTimer = 10;
-
-      let dir = player.x > e.x ? 1 : -1;
-      player.vx += dir * (e.isBoss ? 8 : 4);
-
-      shake = e.isBoss ? 15 : 8;
-
-      e.attackAnim = 10;
-      e.attackCooldown = e.isBoss ? 40 : 25;
-    }
 
     if (e.attackCooldown > 0) e.attackCooldown--;
     if (e.attackAnim > 0) e.attackAnim--;
