@@ -227,13 +227,16 @@ player.vx += (targetVX - player.vx) * 0.2;
   if (Math.abs(player.vx) > 0.1) player.walkAnim += 0.2;
   else player.walkAnim = 0;
 
+player.onGround = false;
   player.vy += 0.5;
   player.y += player.vy;
 
   if (player.y + player.h > ground()) {
     player.y = ground() - player.h;
     player.vy = 0;
-    player.onGround = true;
+if (player.vy >= 0) {
+  player.onGround = true;
+}
   }
 
 if (keys["w"] && player.onGround && jumpCooldown === 0) {
