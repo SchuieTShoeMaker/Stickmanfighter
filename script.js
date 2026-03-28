@@ -13,31 +13,48 @@ window.addEventListener("resize", resizeCanvas);
 const player = {
   x: 100,
   y: 200,
-  w: 40,
-  h: 60,
+  w: 20,
+  h: 40,
   hp: 100
 };
 
 // ===== GAME STATE =====
 let enemies = [];
 let wave = 1;
-
 let attackTimer = 0;
-let attackCooldown = 0;
-
 let damageTexts = [];
 
-// ===== SPAWN ENEMIES =====
+// ===== SPAWN ENEMIES / BOSS =====
 function spawnWave() {
   enemies = [];
 
+  // 🎯 BOSS EVERY 20 WAVES
+  if (wave % 20 === 0) {
+    enemies.push({
+      x: canvas.width / 2,
+      y: 100,
+      w: 60,
+      h: 80,
+      hp: 200,
+      maxHp: 200,
+      speed: 0.8,
+      isBoss: true,
+      hitTimer: 0
+    });
+    return;
+  }
+
+  // Normal enemies
   for (let i = 0; i < wave * 2; i++) {
     enemies.push({
       x: Math.random() * (canvas.width - 30),
       y: Math.random() * (canvas.height - 50),
-      w: 30,
-      h: 50,
+      w: 20,
+      h: 40,
       hp: 20,
+      maxHp: 20,
+      speed: 1.5,
+      isBoss: false,
       hitTimer: 0
     });
   }
@@ -45,21 +62,18 @@ function spawnWave() {
 
 // ===== ATTACK =====
 function attack() {
-  if (attackCooldown > 0) return;
-
   attackTimer = 10;
-  attackCooldown = 20;
 
   enemies.forEach(enemy => {
     if (
-      Math.abs(enemy.x - player.x) < 60 &&
-      Math.abs(enemy.y - player.y) < 60
+      Math.abs(enemy.x - player.x) < 70 &&
+      Math.abs(enemy.y - player.y) < 70
     ) {
       enemy.hp -= 10;
       enemy.hitTimer = 5;
 
       damageTexts.push({
-        x: enemy.x + enemy.w / 2,
+        x: enemy.x,
         y: enemy.y,
         text: "-10",
         life: 30
@@ -74,20 +88,19 @@ function update() {
   player.x += joyX * 0.2;
   player.y += joyY * 0.2;
 
-  // Clamp player inside screen
+  // Stay in bounds
   player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
   player.y = Math.max(0, Math.min(canvas.height - player.h, player.y));
 
-  // Enemy movement (smooth)
+  // Enemy movement
   enemies.forEach(e => {
     const dx = player.x - e.x;
     const dy = player.y - e.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
     if (dist > 0) {
-      const speed = 1.5;
-      e.x += (dx / dist) * speed;
-      e.y += (dy / dist) * speed;
+      e.x += (dx / dist) * e.speed;
+      e.y += (dy / dist) * e.speed;
     }
   });
 
@@ -100,10 +113,7 @@ function update() {
     spawnWave();
   }
 
-  // Attack cooldown
-  if (attackCooldown > 0) attackCooldown--;
-
-  // Damage text animation
+  // Damage text
   damageTexts.forEach(d => {
     d.y -= 1;
     d.life--;
@@ -111,54 +121,81 @@ function update() {
   damageTexts = damageTexts.filter(d => d.life > 0);
 }
 
+// ===== DRAW STICKMAN =====
+function drawStickman(x, y, isBoss = false) {
+  ctx.strokeStyle = isBoss ? "purple" : "white";
+  ctx.lineWidth = isBoss ? 4 : 2;
+
+  // Head
+  ctx.beginPath();
+  ctx.arc(x, y - 15, isBoss ? 12 : 8, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Body
+  ctx.beginPath();
+  ctx.moveTo(x, y - 5);
+  ctx.lineTo(x, y + 20);
+  ctx.stroke();
+
+  // Arms
+  ctx.beginPath();
+  ctx.moveTo(x - 10, y + 5);
+  ctx.lineTo(x + 10, y + 5);
+  ctx.stroke();
+
+  // Legs
+  ctx.beginPath();
+  ctx.moveTo(x, y + 20);
+  ctx.lineTo(x - 10, y + 35);
+  ctx.moveTo(x, y + 20);
+  ctx.lineTo(x + 10, y + 35);
+  ctx.stroke();
+}
+
 // ===== DRAW =====
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Player
-  ctx.fillStyle = "lime";
-  ctx.fillRect(player.x, player.y, player.w, player.h);
+  drawStickman(player.x + 10, player.y + 10);
 
   // Enemies
   enemies.forEach(e => {
-    // Hit flash
     if (e.hitTimer > 0) {
-      ctx.fillStyle = "white";
+      ctx.globalAlpha = 0.5;
       e.hitTimer--;
-    } else {
-      ctx.fillStyle = "red";
     }
 
-    ctx.fillRect(e.x, e.y, e.w, e.h);
+    drawStickman(e.x + e.w / 2, e.y + 20, e.isBoss);
 
-    // Health bar background
+    ctx.globalAlpha = 1;
+
+    // Health bar
     ctx.fillStyle = "black";
-    ctx.fillRect(e.x, e.y - 8, e.w, 5);
+    ctx.fillRect(e.x, e.y - 10, e.w, 5);
 
-    // Health bar fill
-    ctx.fillStyle = "lime";
-    ctx.fillRect(e.x, e.y - 8, (e.hp / 20) * e.w, 5);
+    ctx.fillStyle = e.isBoss ? "purple" : "lime";
+    ctx.fillRect(e.x, e.y - 10, (e.hp / e.maxHp) * e.w, 5);
   });
 
   // Attack effect
   if (attackTimer > 0) {
-    ctx.fillStyle = "yellow";
+    ctx.strokeStyle = "yellow";
     ctx.beginPath();
     ctx.arc(
-      player.x + player.w / 2,
-      player.y + player.h / 2,
-      60,
+      player.x + 10,
+      player.y + 10,
+      70,
       0,
       Math.PI * 2
     );
-    ctx.fill();
-
+    ctx.stroke();
     attackTimer--;
   }
 
-  // Damage numbers
+  // Damage text
   ctx.fillStyle = "yellow";
-  ctx.font = "16px Arial";
+  ctx.font = "14px Arial";
   damageTexts.forEach(d => {
     ctx.fillText(d.text, d.x, d.y);
   });
@@ -166,8 +203,13 @@ function draw() {
   // UI
   ctx.fillStyle = "white";
   ctx.font = "20px Arial";
-  ctx.fillText(`Wave: ${wave}`, 10, 20);
-  ctx.fillText(`HP: ${player.hp}`, 10, 45);
+  ctx.fillText("Wave: " + wave, 10, 20);
+  ctx.fillText("HP: " + player.hp, 10, 45);
+
+  if (wave % 20 === 0 && enemies.length > 0) {
+    ctx.fillStyle = "purple";
+    ctx.fillText("BOSS WAVE", canvas.width / 2 - 60, 30);
+  }
 }
 
 // ===== GAME LOOP =====
@@ -177,7 +219,7 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// ===== JOYSTICK CONTROLS =====
+// ===== JOYSTICK =====
 const joystick = document.getElementById("joystick");
 const stick = document.getElementById("stick");
 const attackBtn = document.getElementById("attackBtn");
@@ -209,14 +251,13 @@ joystick.addEventListener("touchmove", e => {
 joystick.addEventListener("touchend", () => {
   joyX = 0;
   joyY = 0;
-
   stick.style.left = "30px";
   stick.style.top = "30px";
 });
 
-// Attack button
+// Attack
 attackBtn.addEventListener("touchstart", attack);
 
-// ===== START GAME =====
+// ===== START =====
 spawnWave();
 gameLoop();
