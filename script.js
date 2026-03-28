@@ -211,9 +211,13 @@ function update() {
   if (attackCooldown > 0) attackCooldown--;
   if (abilityTimer > 0) abilityTimer--;
 
-  player.vx = 0;
-  if (keys["a"]) player.vx = -player.speed;
-  if (keys["d"]) player.vx = player.speed;
+// joystick movement
+player.vx = joyX * player.speed;
+
+// keyboard override (PC still works)
+if (keys["a"]) player.vx = -player.speed;
+if (keys["d"]) player.vx = player.speed;
+player.vx += (joyX * player.speed - player.vx) * 0.2;
 
   player.x += player.vx;
 
