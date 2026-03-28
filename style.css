@@ -5,8 +5,10 @@ body {
 
 canvas {
   display: block;
-  margin: auto;
+  margin: 0 auto;
   background: #222;
+  width: 100vw;
+  height: 60vh;
 }
 #controls {
   position: fixed;
