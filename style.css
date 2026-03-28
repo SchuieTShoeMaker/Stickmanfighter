@@ -10,27 +10,18 @@ canvas {
   width: 100vw;
   height: 60vh;
 }
-#controls {
-  position: fixed;
-  bottom: 20px;
-  width: 100%;
-  text-align: center;
-}
 
-#controls button {
-  font-size: 24px;
-  margin: 5px;
-  padding: 10px 15px;
-}
+/* Controls container */
 #controls {
   position: fixed;
-  bottom: 20px;
+  bottom: 40px; /* 👈 your spacing */
   width: 100%;
   display: flex;
   justify-content: space-between;
   padding: 0 30px;
 }
 
+/* Joystick */
 #joystick {
   width: 100px;
   height: 100px;
@@ -40,6 +31,7 @@ canvas {
   touch-action: none;
 }
 
+/* Stick inside joystick */
 #stick {
   width: 40px;
   height: 40px;
@@ -50,10 +42,8 @@ canvas {
   top: 30px;
 }
 
+/* Attack button */
 #attackBtn {
   font-size: 24px;
   padding: 20px;
-}
-#controls {
-  bottom: 40px;
 }
