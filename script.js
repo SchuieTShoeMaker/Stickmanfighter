@@ -31,6 +31,7 @@ let playerHitTimer = 0;
 let enemies = [];
 let wave = 1;
 let attackTimer = 0;
+let money = 0; // 💰 NEW
 
 // ===== INPUT =====
 let keys = {};
@@ -80,8 +81,7 @@ function attack() {
   attackTimer = 10;
 
   enemies.forEach(e => {
-    const dx = e.x - player.x;
-    const dist = Math.abs(dx);
+    const dist = Math.abs(e.x - player.x);
 
     if (dist < 60) {
       e.hp -= 15;
@@ -97,9 +97,7 @@ function update() {
   if (keys["ArrowLeft"] || keys["a"]) player.vx = -player.speed;
   if (keys["ArrowRight"] || keys["d"]) player.vx = player.speed;
 
-  // joystick
   player.vx += joyX * 0.05;
-
   player.x += player.vx;
 
   // ---- GRAVITY ----
@@ -132,13 +130,22 @@ function update() {
     }
   });
 
-  enemies = enemies.filter(e => e.hp > 0);
+  // 💰 REMOVE DEAD + GIVE MONEY
+  enemies = enemies.filter(e => {
+    if (e.hp <= 0) {
+      money += e.isBoss ? 100 : 10;
+      return false;
+    }
+    return true;
+  });
 
+  // NEXT WAVE
   if (enemies.length === 0) {
     wave++;
     spawnWave();
   }
 
+  // GAME OVER
   if (player.hp <= 0) {
     alert("Game Over");
     location.reload();
@@ -206,8 +213,10 @@ function draw() {
 
   // UI
   ctx.fillStyle = "white";
+  ctx.font = "18px Arial";
   ctx.fillText("Wave: " + wave, 10, 20);
   ctx.fillText("HP: " + player.hp, 10, 40);
+  ctx.fillText("Money: $" + money, 10, 60); // 💰 NEW
 }
 
 // ===== LOOP =====
