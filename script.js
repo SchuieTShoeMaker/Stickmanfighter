@@ -41,6 +41,7 @@ function spawnWave() {
       speed: 0.8,
       isBoss: true,
       attackCooldown: 0,
+      dashCooldown: 60,
       phase: 0
     });
     return;
@@ -103,11 +104,20 @@ function update() {
     if (dist > 0) {
       let speed = e.speed;
 
-      // Boss movement = floaty + creepy
       if (e.isBoss) {
-        speed = 0.8 + Math.sin(Date.now() / 200) * 0.5;
         e.phase += 0.05;
-        e.y += Math.sin(e.phase) * 0.5;
+
+        // Floaty movement
+        speed = 0.6 + Math.sin(Date.now() / 200) * 0.4;
+        e.y += Math.sin(e.phase) * 1;
+
+        // 🔥 DASH ATTACK
+        if (e.dashCooldown <= 0) {
+          speed = 6; // big lunge
+          e.dashCooldown = 120;
+        }
+
+        e.dashCooldown--;
       }
 
       e.x += (dx / dist) * speed;
@@ -117,10 +127,12 @@ function update() {
     // DAMAGE PLAYER
     if (dist < 35) {
       if (e.attackCooldown <= 0) {
-        let dmg = e.isBoss ? 15 : 4;
+        let dmg = e.isBoss ? 20 : 4;
 
         player.hp -= dmg;
-        player.hp = Math.max(0, player.hp); // 🔥 FIX NEGATIVE HP
+
+        // 🔥 FIX negative HP
+        if (player.hp < 0) player.hp = 0;
 
         damageTexts.push({
           x: player.x,
@@ -158,24 +170,20 @@ function drawStickman(x, y, w, h, color) {
   ctx.strokeStyle = color;
   ctx.lineWidth = 2;
 
-  // Head
   ctx.beginPath();
   ctx.arc(x + w / 2, y + 10, 6, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Body
   ctx.beginPath();
   ctx.moveTo(x + w / 2, y + 16);
   ctx.lineTo(x + w / 2, y + 30);
   ctx.stroke();
 
-  // Arms
   ctx.beginPath();
   ctx.moveTo(x + w / 2 - 8, y + 22);
   ctx.lineTo(x + w / 2 + 8, y + 22);
   ctx.stroke();
 
-  // Legs
   ctx.beginPath();
   ctx.moveTo(x + w / 2, y + 30);
   ctx.lineTo(x + w / 2 - 6, y + 40);
@@ -184,44 +192,63 @@ function drawStickman(x, y, w, h, color) {
   ctx.stroke();
 }
 
-// ===== 🔥 CATNAP-STYLE BOSS DRAW =====
+// ===== 🔥 CATNAP BOSS DRAW =====
 function drawBoss(e) {
   const cx = e.x + e.w / 2;
   const cy = e.y + e.h / 2;
 
-  // Aura glow
-  ctx.fillStyle = "rgba(180, 0, 255, 0.2)";
+  // Aura
+  ctx.fillStyle = "rgba(180, 0, 255, 0.25)";
   ctx.beginPath();
-  ctx.arc(cx, cy, 60 + Math.sin(Date.now()/200)*5, 0, Math.PI * 2);
+  ctx.arc(cx, cy, 70 + Math.sin(Date.now()/150)*10, 0, Math.PI * 2);
   ctx.fill();
 
-  // Body (rounded blob instead of stickman)
-  ctx.fillStyle = "purple";
+  // Body
+  ctx.fillStyle = "#7a00cc";
   ctx.beginPath();
-  ctx.ellipse(cx, cy, 25, 40, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx, cy, 35, 50, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Eyes (creepy)
+  // Ears
+  ctx.beginPath();
+  ctx.moveTo(cx - 25, cy - 40);
+  ctx.lineTo(cx - 10, cy - 70);
+  ctx.lineTo(cx - 5, cy - 40);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(cx + 25, cy - 40);
+  ctx.lineTo(cx + 10, cy - 70);
+  ctx.lineTo(cx + 5, cy - 40);
+  ctx.fill();
+
+  // Eyes
   ctx.fillStyle = "black";
   ctx.beginPath();
-  ctx.arc(cx - 8, cy - 10, 4, 0, Math.PI * 2);
-  ctx.arc(cx + 8, cy - 10, 4, 0, Math.PI * 2);
+  ctx.arc(cx - 10, cy - 10, 6, 0, Math.PI * 2);
+  ctx.arc(cx + 10, cy - 10, 6, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "red";
+  ctx.beginPath();
+  ctx.arc(cx - 10, cy - 10, 2, 0, Math.PI * 2);
+  ctx.arc(cx + 10, cy - 10, 2, 0, Math.PI * 2);
   ctx.fill();
 
   // Mouth
   ctx.strokeStyle = "black";
   ctx.beginPath();
-  ctx.arc(cx, cy, 10, 0, Math.PI);
+  ctx.arc(cx, cy + 10, 12, 0, Math.PI);
   ctx.stroke();
 
-  // Floating arms (tentacle vibe)
-  ctx.strokeStyle = "purple";
-  for (let i = 0; i < 3; i++) {
+  // Tentacles
+  ctx.strokeStyle = "#a020f0";
+  for (let i = 0; i < 4; i++) {
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(
-      cx + Math.sin(Date.now()/300 + i) * 30,
-      cy + Math.cos(Date.now()/300 + i) * 30
+      cx + Math.sin(Date.now()/200 + i) * 50,
+      cy + Math.cos(Date.now()/200 + i) * 50
     );
     ctx.stroke();
   }
@@ -259,7 +286,7 @@ function draw() {
     attackTimer--;
   }
 
-  // Damage numbers
+  // Damage text
   ctx.fillStyle = "yellow";
   ctx.font = "14px Arial";
   damageTexts.forEach(d => {
