@@ -22,6 +22,7 @@ let damageTexts = [];
 let wave = 1;
 let attackTimer = 0;
 let shake = 0;
+let gameOver = false;
 
 // ===== SPAWN =====
 function spawnWave() {
@@ -40,7 +41,7 @@ function spawnWave() {
             hp: isBoss ? 200 : 30,
             maxHp: isBoss ? 200 : 30,
             speed: isBoss ? 1.2 : 1.5,
-            isBoss: isBoss,
+            isBoss,
             attackCooldown: 0,
             dashCooldown: 0,
             phase: 0,
@@ -51,6 +52,8 @@ function spawnWave() {
 
 // ===== ATTACK =====
 function attack() {
+    if (gameOver) return;
+
     attackTimer = 10;
 
     enemies.forEach(e => {
@@ -79,6 +82,9 @@ function attack() {
 // ===== UPDATE =====
 function update() {
 
+    // stop updating if dead
+    if (gameOver) return;
+
     // Smooth movement
     player.vx += joyX * 0.02;
     player.vy += joyY * 0.02;
@@ -99,7 +105,6 @@ function update() {
         let dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist > 0) {
-
             let speed = e.speed;
 
             if (e.isBoss) {
@@ -126,7 +131,10 @@ function update() {
 
             shake = 8;
 
-            if (player.hp < 0) player.hp = 0;
+            if (player.hp <= 0) {
+                player.hp = 0;
+                gameOver = true;
+            }
 
             damageTexts.push({
                 x: player.x,
@@ -139,15 +147,14 @@ function update() {
         }
 
         if (e.attackCooldown > 0) e.attackCooldown--;
-
         if (e.hitTimer > 0) e.hitTimer--;
     });
 
-    // Remove dead
+    // Remove dead enemies
     enemies = enemies.filter(e => e.hp > 0);
 
     // Next wave
-    if (enemies.length === 0) {
+    if (enemies.length === 0 && !gameOver) {
         wave++;
         spawnWave();
     }
@@ -159,15 +166,9 @@ function update() {
     });
 
     damageTexts = damageTexts.filter(d => d.life > 0);
-
-    // Game over
-    if (player.hp <= 0) {
-        alert("Game Over");
-        location.reload();
-    }
 }
 
-// ===== DRAW PLAYER =====
+// ===== DRAW STICKMAN =====
 function drawStickman(x, y, w, h, color) {
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
@@ -277,10 +278,14 @@ function draw() {
     ctx.fillText("Wave: " + wave, 10, 20);
     ctx.fillText("HP: " + player.hp, 10, 40);
 
-    if (wave % 10 === 0) {
-        ctx.fillStyle = "purple";
-        ctx.font = "24px Arial";
-        ctx.fillText("BOSS WAVE", canvas.width / 2 - 80, 40);
+    // GAME OVER SCREEN
+    if (gameOver) {
+        ctx.fillStyle = "white";
+        ctx.font = "40px Arial";
+        ctx.fillText("GAME OVER", canvas.width / 2 - 140, canvas.height / 2);
+
+        ctx.font = "20px Arial";
+        ctx.fillText("Tap to Restart", canvas.width / 2 - 80, canvas.height / 2 + 40);
     }
 }
 
@@ -325,6 +330,11 @@ joystick.addEventListener("touchend", () => {
     joyY = 0;
     stick.style.left = "30px";
     stick.style.top = "30px";
+});
+
+// restart on tap
+canvas.addEventListener("touchstart", () => {
+    if (gameOver) location.reload();
 });
 
 attackBtn.addEventListener("touchstart", attack);
