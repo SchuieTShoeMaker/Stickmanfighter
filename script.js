@@ -19,6 +19,7 @@ let player = {
 // ===== GAME STATE =====
 let enemies = [];
 let wave = 1;
+let attackTimer = 0;
 
 // ===== SPAWN ENEMIES =====
 function spawnWave() {
@@ -26,8 +27,8 @@ function spawnWave() {
 
     for (let i = 0; i < wave * 2; i++) {
         enemies.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
+            x: Math.random() * (canvas.width - 30),
+            y: Math.random() * (canvas.height - 50),
             hp: 20
         });
     }
@@ -35,13 +36,7 @@ function spawnWave() {
 
 // ===== ATTACK =====
 function attack() {
-    console.log("ATTACK!");
-
-    // Visual attack effect
-    ctx.fillStyle = "yellow";
-    ctx.beginPath();
-    ctx.arc(player.x + 20, player.y + 30, 60, 0, Math.PI * 2);
-    ctx.fill();
+    attackTimer = 10;
 
     enemies.forEach(enemy => {
         if (
@@ -63,12 +58,17 @@ function update() {
     player.x = Math.max(0, Math.min(canvas.width - 40, player.x));
     player.y = Math.max(0, Math.min(canvas.height - 60, player.y));
 
-    // Enemies follow player
+    // Enemies follow player (SMOOTH)
     enemies.forEach(e => {
-        if (e.x < player.x) e.x += 1;
-        if (e.x > player.x) e.x -= 1;
-        if (e.y < player.y) e.y += 1;
-        if (e.y > player.y) e.y -= 1;
+        const dx = player.x - e.x;
+        const dy = player.y - e.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist > 0) {
+            const speed = 1.5;
+            e.x += (dx / dist) * speed;
+            e.y += (dy / dist) * speed;
+        }
     });
 
     // Remove dead enemies
@@ -94,6 +94,15 @@ function draw() {
     enemies.forEach(e => {
         ctx.fillRect(e.x, e.y, 30, 50);
     });
+
+    // Attack effect (VISIBLE now)
+    if (attackTimer > 0) {
+        ctx.fillStyle = "yellow";
+        ctx.beginPath();
+        ctx.arc(player.x + 20, player.y + 30, 60, 0, Math.PI * 2);
+        ctx.fill();
+        attackTimer--;
+    }
 
     // UI
     ctx.fillStyle = "white";
