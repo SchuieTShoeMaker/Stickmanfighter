@@ -18,6 +18,8 @@ const player = {
   hp: 100
 };
 
+let playerHitTimer = 0;
+
 // ===== GAME STATE =====
 let enemies = [];
 let wave = 1;
@@ -100,7 +102,7 @@ function update() {
     if (dist > 0) {
       let speed = e.speed;
 
-      // Boss floats slower + smoother
+      // Boss movement (floaty)
       if (e.isBoss) {
         speed = 1 + Math.sin(Date.now() / 300) * 0.5;
       }
@@ -109,12 +111,25 @@ function update() {
       e.y += (dy / dist) * speed;
     }
 
-    // 🔥 DAMAGE PLAYER ON CONTACT
+    // 😈 EXTRA BOSS BEHAVIOR
+    if (e.isBoss) {
+      // float effect
+      e.y += Math.sin(Date.now() / 200) * 0.5;
+
+      // TELEPORT (rare but scary)
+      if (Math.random() < 0.002) {
+        e.x = player.x + (Math.random() * 100 - 50);
+        e.y = player.y + (Math.random() * 100 - 50);
+      }
+    }
+
+    // 🔥 DAMAGE PLAYER
     if (dist < 30) {
       if (e.attackCooldown <= 0) {
         let dmg = e.isBoss ? 10 : 3;
 
         player.hp -= dmg;
+        playerHitTimer = 10;
 
         damageTexts.push({
           x: player.x,
@@ -123,7 +138,7 @@ function update() {
           life: 30
         });
 
-        e.attackCooldown = 30; // cooldown
+        e.attackCooldown = 30;
       }
     }
 
@@ -139,12 +154,18 @@ function update() {
     spawnWave();
   }
 
-  // Damage text
+  // Damage text animation
   damageTexts.forEach(d => {
     d.y -= 1;
     d.life--;
   });
   damageTexts = damageTexts.filter(d => d.life > 0);
+
+  // 💀 GAME OVER
+  if (player.hp <= 0) {
+    alert("Game Over!");
+    location.reload();
+  }
 }
 
 // ===== DRAW STICKMAN =====
@@ -182,19 +203,35 @@ function drawStickman(x, y, w, h, color) {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Player
-  drawStickman(player.x, player.y, player.w, player.h, "white");
+  // 🌑 DARK SCREEN ON BOSS WAVE
+  if (wave % 10 === 0) {
+    ctx.fillStyle = "rgba(0,0,0,0.3)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // Player (flash when hit)
+  if (playerHitTimer > 0) {
+    drawStickman(player.x, player.y, player.w, player.h, "red");
+    playerHitTimer--;
+  } else {
+    drawStickman(player.x, player.y, player.w, player.h, "white");
+  }
 
   // Enemies
   enemies.forEach(e => {
     if (e.isBoss) {
-      // 🔥 BOSS GLOW (catnap vibe)
+      // 👻 Purple aura
       ctx.fillStyle = "rgba(150, 0, 200, 0.2)";
       ctx.beginPath();
-      ctx.arc(e.x + 20, e.y + 30, 40, 0, Math.PI * 2);
+      ctx.arc(e.x + 20, e.y + 30, 50, 0, Math.PI * 2);
       ctx.fill();
 
       drawStickman(e.x, e.y, e.w, e.h, "purple");
+
+      // 👁️ Creepy eyes
+      ctx.fillStyle = "pink";
+      ctx.fillRect(e.x + 10, e.y + 15, 4, 4);
+      ctx.fillRect(e.x + 25, e.y + 15, 4, 4);
     } else {
       drawStickman(e.x, e.y, e.w, e.h, "red");
     }
@@ -207,7 +244,7 @@ function draw() {
     ctx.fillRect(e.x, e.y - 8, (e.hp / e.maxHp) * e.w, 4);
   });
 
-  // Attack circle
+  // Attack effect
   if (attackTimer > 0) {
     ctx.fillStyle = "rgba(255,255,0,0.3)";
     ctx.beginPath();
@@ -229,7 +266,6 @@ function draw() {
   ctx.fillText("Wave: " + wave, 10, 20);
   ctx.fillText("HP: " + player.hp, 10, 40);
 
-  // Boss text
   if (wave % 10 === 0) {
     ctx.fillStyle = "purple";
     ctx.font = "24px Arial";
