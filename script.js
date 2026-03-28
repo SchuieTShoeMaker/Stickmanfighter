@@ -1,4 +1,4 @@
-// ===== CANVAS SETUP =====
+// ===== SETUP =====
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -15,10 +15,9 @@ const player = {
   y: 200,
   w: 20,
   h: 40,
-  hp: 100
+  hp: 100,
+  maxHp: 100
 };
-
-let playerHitTimer = 0;
 
 // ===== GAME STATE =====
 let enemies = [];
@@ -35,13 +34,14 @@ function spawnWave() {
     enemies.push({
       x: canvas.width / 2,
       y: canvas.height / 3,
-      w: 60,
-      h: 100,
-      hp: 300,
-      maxHp: 300,
-      speed: 1,
+      w: 80,
+      h: 120,
+      hp: 500,
+      maxHp: 500,
+      speed: 0.8,
       isBoss: true,
-      attackCooldown: 0
+      attackCooldown: 0,
+      phase: 0
     });
     return;
   }
@@ -99,37 +99,28 @@ function update() {
     const dy = player.y - e.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
+    // Movement
     if (dist > 0) {
       let speed = e.speed;
 
-      // Boss movement (floaty)
+      // Boss movement = floaty + creepy
       if (e.isBoss) {
-        speed = 1 + Math.sin(Date.now() / 300) * 0.5;
+        speed = 0.8 + Math.sin(Date.now() / 200) * 0.5;
+        e.phase += 0.05;
+        e.y += Math.sin(e.phase) * 0.5;
       }
 
       e.x += (dx / dist) * speed;
       e.y += (dy / dist) * speed;
     }
 
-    // 😈 EXTRA BOSS BEHAVIOR
-    if (e.isBoss) {
-      // float effect
-      e.y += Math.sin(Date.now() / 200) * 0.5;
-
-      // TELEPORT (rare but scary)
-      if (Math.random() < 0.002) {
-        e.x = player.x + (Math.random() * 100 - 50);
-        e.y = player.y + (Math.random() * 100 - 50);
-      }
-    }
-
-    // 🔥 DAMAGE PLAYER
-    if (dist < 30) {
+    // DAMAGE PLAYER
+    if (dist < 35) {
       if (e.attackCooldown <= 0) {
-        let dmg = e.isBoss ? 10 : 3;
+        let dmg = e.isBoss ? 15 : 4;
 
         player.hp -= dmg;
-        playerHitTimer = 10;
+        player.hp = Math.max(0, player.hp); // 🔥 FIX NEGATIVE HP
 
         damageTexts.push({
           x: player.x,
@@ -138,7 +129,7 @@ function update() {
           life: 30
         });
 
-        e.attackCooldown = 30;
+        e.attackCooldown = e.isBoss ? 20 : 40;
       }
     }
 
@@ -154,18 +145,12 @@ function update() {
     spawnWave();
   }
 
-  // Damage text animation
+  // Damage text
   damageTexts.forEach(d => {
     d.y -= 1;
     d.life--;
   });
   damageTexts = damageTexts.filter(d => d.life > 0);
-
-  // 💀 GAME OVER
-  if (player.hp <= 0) {
-    alert("Game Over!");
-    location.reload();
-  }
 }
 
 // ===== DRAW STICKMAN =====
@@ -199,39 +184,60 @@ function drawStickman(x, y, w, h, color) {
   ctx.stroke();
 }
 
+// ===== 🔥 CATNAP-STYLE BOSS DRAW =====
+function drawBoss(e) {
+  const cx = e.x + e.w / 2;
+  const cy = e.y + e.h / 2;
+
+  // Aura glow
+  ctx.fillStyle = "rgba(180, 0, 255, 0.2)";
+  ctx.beginPath();
+  ctx.arc(cx, cy, 60 + Math.sin(Date.now()/200)*5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Body (rounded blob instead of stickman)
+  ctx.fillStyle = "purple";
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, 25, 40, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eyes (creepy)
+  ctx.fillStyle = "black";
+  ctx.beginPath();
+  ctx.arc(cx - 8, cy - 10, 4, 0, Math.PI * 2);
+  ctx.arc(cx + 8, cy - 10, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Mouth
+  ctx.strokeStyle = "black";
+  ctx.beginPath();
+  ctx.arc(cx, cy, 10, 0, Math.PI);
+  ctx.stroke();
+
+  // Floating arms (tentacle vibe)
+  ctx.strokeStyle = "purple";
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(
+      cx + Math.sin(Date.now()/300 + i) * 30,
+      cy + Math.cos(Date.now()/300 + i) * 30
+    );
+    ctx.stroke();
+  }
+}
+
 // ===== DRAW =====
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // 🌑 DARK SCREEN ON BOSS WAVE
-  if (wave % 10 === 0) {
-    ctx.fillStyle = "rgba(0,0,0,0.3)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }
-
-  // Player (flash when hit)
-  if (playerHitTimer > 0) {
-    drawStickman(player.x, player.y, player.w, player.h, "red");
-    playerHitTimer--;
-  } else {
-    drawStickman(player.x, player.y, player.w, player.h, "white");
-  }
+  // Player
+  drawStickman(player.x, player.y, player.w, player.h, "white");
 
   // Enemies
   enemies.forEach(e => {
     if (e.isBoss) {
-      // 👻 Purple aura
-      ctx.fillStyle = "rgba(150, 0, 200, 0.2)";
-      ctx.beginPath();
-      ctx.arc(e.x + 20, e.y + 30, 50, 0, Math.PI * 2);
-      ctx.fill();
-
-      drawStickman(e.x, e.y, e.w, e.h, "purple");
-
-      // 👁️ Creepy eyes
-      ctx.fillStyle = "pink";
-      ctx.fillRect(e.x + 10, e.y + 15, 4, 4);
-      ctx.fillRect(e.x + 25, e.y + 15, 4, 4);
+      drawBoss(e);
     } else {
       drawStickman(e.x, e.y, e.w, e.h, "red");
     }
@@ -244,7 +250,7 @@ function draw() {
     ctx.fillRect(e.x, e.y - 8, (e.hp / e.maxHp) * e.w, 4);
   });
 
-  // Attack effect
+  // Attack circle
   if (attackTimer > 0) {
     ctx.fillStyle = "rgba(255,255,0,0.3)";
     ctx.beginPath();
@@ -266,10 +272,11 @@ function draw() {
   ctx.fillText("Wave: " + wave, 10, 20);
   ctx.fillText("HP: " + player.hp, 10, 40);
 
+  // Boss text
   if (wave % 10 === 0) {
     ctx.fillStyle = "purple";
     ctx.font = "24px Arial";
-    ctx.fillText("BOSS WAVE", canvas.width / 2 - 70, 40);
+    ctx.fillText("BOSS WAVE", canvas.width / 2 - 80, 40);
   }
 }
 
