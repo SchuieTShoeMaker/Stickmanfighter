@@ -1,11 +1,18 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8">
+
+  <!-- Prevent zoom -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <title>Stickman Combat</title>
+
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<!-- GAME -->
 <canvas id="game"></canvas>
 
 <!-- SHOP -->
@@ -26,10 +33,17 @@
   <button onclick="continueGame()">Continue</button>
 </div>
 
-<!-- MOBILE CONTROLS -->
-<div id="attackBtn">⚔️</div>
-<div id="jumpBtn">⬆️</div>
+<!-- MOBILE BUTTONS -->
+<button id="attackBtn">⚔️</button>
+<button id="jumpBtn">⬆️</button>
+
+<!-- GAME OVER -->
+<div id="gameOver">
+  <h1>Game Over</h1>
+  <button onclick="location.reload()">Restart</button>
+</div>
 
 <script src="script.js"></script>
+
 </body>
 </html>
