@@ -3,12 +3,12 @@ body {
   margin: 0;
   overflow: hidden;
 
-  /* 🌿 Calm sky background */
+  /* 🌿 calm background */
   background: linear-gradient(#87ceeb, #e0f7ff);
 
   font-family: Arial, sans-serif;
 
-  /* 🚫 STOP ZOOM / DOUBLE TAP */
+  /* 🚫 STOP ZOOM */
   touch-action: manipulation;
 }
 
@@ -17,9 +17,10 @@ canvas {
   display: block;
 }
 
-/* ===== SHOP (HAPPY VIBE) ===== */
+/* ===== SHOP ===== */
 #shop {
   display: none;
+
   position: absolute;
   top: 20%;
   left: 50%;
@@ -45,7 +46,7 @@ canvas {
   color: #555;
 }
 
-/* Buttons */
+/* buttons */
 #shop button {
   display: block;
   width: 200px;
@@ -73,12 +74,6 @@ canvas {
   transform: scale(0.95);
 }
 
-/* Money text */
-#shop p {
-  font-weight: bold;
-  color: #333;
-}
-
 /* ===== JOYSTICK ===== */
 #joystick {
   position: absolute;
@@ -91,7 +86,7 @@ canvas {
   background: rgba(0,0,0,0.2);
   border-radius: 50%;
 
-  touch-action: none; /* 🚫 stop zoom */
+  touch-action: none;
 }
 
 #stick {
@@ -120,20 +115,20 @@ canvas {
   background: #ffffff;
   box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 
-  touch-action: manipulation; /* 🚫 stop zoom */
+  touch-action: manipulation;
 }
 
-/* Attack button (right) */
+/* positions */
 #attackBtn {
   right: 20px;
 }
 
-/* Jump button (left of attack) */
 #jumpBtn {
   right: 100px;
 }
 
-/* Button press effect */
-#attackBtn:active, #jumpBtn:active {
+/* press effect */
+#attackBtn:active,
+#jumpBtn:active {
   transform: scale(0.9);
 }
