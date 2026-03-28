@@ -11,7 +11,9 @@ const player = {
     y: 200,
     w: 20,
     h: 40,
-    hp: 100
+    hp: 100,
+    vx: 0,
+    vy: 0
 };
 
 // ===== GAME STATE =====
@@ -19,6 +21,7 @@ let enemies = [];
 let damageTexts = [];
 let wave = 1;
 let attackTimer = 0;
+let shake = 0;
 
 // ===== SPAWN =====
 function spawnWave() {
@@ -40,7 +43,8 @@ function spawnWave() {
             isBoss: isBoss,
             attackCooldown: 0,
             dashCooldown: 0,
-            phase: 0
+            phase: 0,
+            hitTimer: 0
         });
     }
 }
@@ -56,6 +60,11 @@ function attack() {
 
         if (dist < 80) {
             e.hp -= 15;
+            e.hitTimer = 5;
+
+            // knockback
+            e.x += (dx / dist) * 20;
+            e.y += (dy / dist) * 20;
 
             damageTexts.push({
                 x: e.x,
@@ -70,9 +79,15 @@ function attack() {
 // ===== UPDATE =====
 function update() {
 
-    // Movement
-    player.x += joyX * 0.2;
-    player.y += joyY * 0.2;
+    // Smooth movement
+    player.vx += joyX * 0.02;
+    player.vy += joyY * 0.02;
+
+    player.vx *= 0.9;
+    player.vy *= 0.9;
+
+    player.x += player.vx;
+    player.y += player.vy;
 
     // Bounds
     player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
@@ -90,11 +105,9 @@ function update() {
             if (e.isBoss) {
                 e.phase += 0.05;
 
-                // floaty motion
                 speed = 0.6 + Math.sin(Date.now() / 200) * 0.4;
                 e.y += Math.sin(e.phase);
 
-                // dash
                 if (e.dashCooldown <= 0) {
                     speed = 6;
                     e.dashCooldown = 120;
@@ -111,6 +124,8 @@ function update() {
             let dmg = e.isBoss ? 20 : 4;
             player.hp -= dmg;
 
+            shake = 8;
+
             if (player.hp < 0) player.hp = 0;
 
             damageTexts.push({
@@ -124,6 +139,8 @@ function update() {
         }
 
         if (e.attackCooldown > 0) e.attackCooldown--;
+
+        if (e.hitTimer > 0) e.hitTimer--;
     });
 
     // Remove dead
@@ -142,6 +159,12 @@ function update() {
     });
 
     damageTexts = damageTexts.filter(d => d.life > 0);
+
+    // Game over
+    if (player.hp <= 0) {
+        alert("Game Over");
+        location.reload();
+    }
 }
 
 // ===== DRAW PLAYER =====
@@ -149,24 +172,20 @@ function drawStickman(x, y, w, h, color) {
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
 
-    // head
     ctx.beginPath();
     ctx.arc(x + w / 2, y + 10, 6, 0, Math.PI * 2);
     ctx.stroke();
 
-    // body
     ctx.beginPath();
     ctx.moveTo(x + w / 2, y + 16);
     ctx.lineTo(x + w / 2, y + 30);
     ctx.stroke();
 
-    // arms
     ctx.beginPath();
     ctx.moveTo(x + w / 2 - 8, y + 22);
     ctx.lineTo(x + w / 2 + 8, y + 22);
     ctx.stroke();
 
-    // legs
     ctx.beginPath();
     ctx.moveTo(x + w / 2, y + 30);
     ctx.lineTo(x + w / 2 - 6, y + 40);
@@ -180,19 +199,16 @@ function drawBoss(e) {
     let cx = e.x + e.w / 2;
     let cy = e.y + e.h / 2;
 
-    // aura
     ctx.fillStyle = "rgba(180,0,255,0.25)";
     ctx.beginPath();
     ctx.arc(cx, cy, 70 + Math.sin(Date.now()/150)*10, 0, Math.PI*2);
     ctx.fill();
 
-    // body
-    ctx.fillStyle = "#7a00cc";
+    ctx.fillStyle = e.hitTimer > 0 ? "white" : "#7a00cc";
     ctx.beginPath();
     ctx.ellipse(cx, cy, 35, 50, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // eyes
     ctx.fillStyle = "black";
     ctx.beginPath();
     ctx.arc(cx - 10, cy - 10, 6, 0, Math.PI*2);
@@ -205,7 +221,6 @@ function drawBoss(e) {
     ctx.arc(cx + 10, cy - 10, 2, 0, Math.PI*2);
     ctx.fill();
 
-    // mouth
     ctx.strokeStyle = "black";
     ctx.beginPath();
     ctx.arc(cx, cy + 10, 12, 0, Math.PI);
@@ -216,11 +231,18 @@ function drawBoss(e) {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // screen shake
+    ctx.save();
+    ctx.translate(
+        Math.random() * shake - shake / 2,
+        Math.random() * shake - shake / 2
+    );
+
     drawStickman(player.x, player.y, player.w, player.h, "white");
 
     enemies.forEach(e => {
         if (e.isBoss) drawBoss(e);
-        else drawStickman(e.x, e.y, e.w, e.h, "red");
+        else drawStickman(e.x, e.y, e.w, e.h, e.hitTimer > 0 ? "white" : "red");
 
         // HP bar
         ctx.fillStyle = "black";
@@ -229,6 +251,9 @@ function draw() {
         ctx.fillStyle = e.isBoss ? "purple" : "lime";
         ctx.fillRect(e.x, e.y - 8, (e.hp / e.maxHp) * e.w, 4);
     });
+
+    ctx.restore();
+    if (shake > 0) shake--;
 
     // Attack circle
     if (attackTimer > 0) {
