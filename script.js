@@ -280,10 +280,23 @@ if (keys["w"] && player.onGround && jumpCooldown === 0) {
 if (
   Math.abs(e.x - player.x) < 20 &&
   Math.abs(e.y - player.y) < 30 &&
-  player.onGround &&
+  player.onGround && 
   e.attackCooldown <= 0
 ) {
   let dmg = e.isBoss ? (e.stage === 3 ? 20 : 12) : 2;
+  dmg = Math.max(0, dmg - playerArmor);
+
+  player.hp -= dmg;
+  playerHitTimer = 10;
+
+  let dir = player.x > e.x ? 1 : -1;
+  player.vx += dir * (e.isBoss ? 8 : 4);
+
+  shake = e.isBoss ? 15 : 8;
+
+  e.attackAnim = 10;
+  e.attackCooldown = e.isBoss ? 40 : 25;
+}
   dmg = Math.max(0, dmg - playerArmor);
 
   player.hp -= dmg;
