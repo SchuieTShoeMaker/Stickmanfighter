@@ -28,34 +28,34 @@ let damageTexts = [];
 function spawnWave() {
   enemies = [];
 
-  // 🔥 Boss every 20 waves
-  if (wave % 20 === 0) {
+  // 🔥 BOSS EVERY 10 WAVES
+  if (wave % 10 === 0) {
     enemies.push({
       x: canvas.width / 2,
-      y: 100,
+      y: canvas.height / 3,
       w: 60,
-      h: 80,
-      hp: 200,
-      maxHp: 200,
-      speed: 0.8,
+      h: 100,
+      hp: 300,
+      maxHp: 300,
+      speed: 1,
       isBoss: true,
-      hitTimer: 0
+      attackCooldown: 0
     });
     return;
   }
 
-  // Normal enemies
+  // NORMAL ENEMIES
   for (let i = 0; i < wave * 2; i++) {
     enemies.push({
       x: Math.random() * (canvas.width - 30),
       y: Math.random() * (canvas.height - 50),
       w: 20,
       h: 40,
-      hp: 20,
-      maxHp: 20,
+      hp: 30,
+      maxHp: 30,
       speed: 1.5,
       isBoss: false,
-      hitTimer: 0
+      attackCooldown: 0
     });
   }
 }
@@ -65,17 +65,17 @@ function attack() {
   attackTimer = 10;
 
   enemies.forEach(enemy => {
-    if (
-      Math.abs(enemy.x - player.x) < 70 &&
-      Math.abs(enemy.y - player.y) < 70
-    ) {
-      enemy.hp -= 10;
-      enemy.hitTimer = 5;
+    const dx = enemy.x - player.x;
+    const dy = enemy.y - player.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < 70) {
+      enemy.hp -= 15;
 
       damageTexts.push({
         x: enemy.x,
         y: enemy.y,
-        text: "-10",
+        text: "-15",
         life: 30
       });
     }
@@ -84,9 +84,11 @@ function attack() {
 
 // ===== UPDATE =====
 function update() {
+  // Movement
   player.x += joyX * 0.2;
   player.y += joyY * 0.2;
 
+  // Boundaries
   player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
   player.y = Math.max(0, Math.min(canvas.height - player.h, player.y));
 
@@ -96,50 +98,83 @@ function update() {
     const dist = Math.sqrt(dx * dx + dy * dy);
 
     if (dist > 0) {
-      e.x += (dx / dist) * e.speed;
-      e.y += (dy / dist) * e.speed;
+      let speed = e.speed;
+
+      // Boss floats slower + smoother
+      if (e.isBoss) {
+        speed = 1 + Math.sin(Date.now() / 300) * 0.5;
+      }
+
+      e.x += (dx / dist) * speed;
+      e.y += (dy / dist) * speed;
     }
+
+    // 🔥 DAMAGE PLAYER ON CONTACT
+    if (dist < 30) {
+      if (e.attackCooldown <= 0) {
+        let dmg = e.isBoss ? 10 : 3;
+
+        player.hp -= dmg;
+
+        damageTexts.push({
+          x: player.x,
+          y: player.y,
+          text: "-" + dmg,
+          life: 30
+        });
+
+        e.attackCooldown = 30; // cooldown
+      }
+    }
+
+    if (e.attackCooldown > 0) e.attackCooldown--;
   });
 
+  // Remove dead
   enemies = enemies.filter(e => e.hp > 0);
 
+  // Next wave
   if (enemies.length === 0) {
     wave++;
     spawnWave();
   }
 
+  // Damage text
   damageTexts.forEach(d => {
     d.y -= 1;
     d.life--;
   });
-
   damageTexts = damageTexts.filter(d => d.life > 0);
 }
 
 // ===== DRAW STICKMAN =====
-function drawStickman(x, y, isBoss = false) {
-  ctx.strokeStyle = isBoss ? "purple" : "white";
-  ctx.lineWidth = isBoss ? 4 : 2;
+function drawStickman(x, y, w, h, color) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
 
+  // Head
   ctx.beginPath();
-  ctx.arc(x, y - 15, isBoss ? 12 : 8, 0, Math.PI * 2);
+  ctx.arc(x + w / 2, y + 10, 6, 0, Math.PI * 2);
   ctx.stroke();
 
+  // Body
   ctx.beginPath();
-  ctx.moveTo(x, y - 5);
-  ctx.lineTo(x, y + 20);
+  ctx.moveTo(x + w / 2, y + 16);
+  ctx.lineTo(x + w / 2, y + 30);
   ctx.stroke();
 
+  // Arms
   ctx.beginPath();
-  ctx.moveTo(x - 10, y + 5);
-  ctx.lineTo(x + 10, y + 5);
+  ctx.moveTo(x + w / 2 - 8, y + 22);
+  ctx.lineTo(x + w / 2 + 8, y + 22);
   ctx.stroke();
 
+  // Legs
   ctx.beginPath();
-  ctx.moveTo(x, y + 20);
-  ctx.lineTo(x - 10, y + 35);
-  ctx.moveTo(x, y + 20);
-  ctx.lineTo(x + 10, y + 35);
+  ctx.moveTo(x + w / 2, y + 30);
+  ctx.lineTo(x + w / 2 - 6, y + 40);
+  ctx.moveTo(x + w / 2, y + 30);
+  ctx.lineTo(x + w / 2 + 6, y + 40);
   ctx.stroke();
 }
 
@@ -148,42 +183,40 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Player
-  drawStickman(player.x + 10, player.y + 10);
+  drawStickman(player.x, player.y, player.w, player.h, "white");
 
   // Enemies
   enemies.forEach(e => {
-    if (e.hitTimer > 0) {
-      ctx.globalAlpha = 0.5;
-      e.hitTimer--;
-    }
+    if (e.isBoss) {
+      // 🔥 BOSS GLOW (catnap vibe)
+      ctx.fillStyle = "rgba(150, 0, 200, 0.2)";
+      ctx.beginPath();
+      ctx.arc(e.x + 20, e.y + 30, 40, 0, Math.PI * 2);
+      ctx.fill();
 
-    drawStickman(e.x + e.w / 2, e.y + 20, e.isBoss);
-    ctx.globalAlpha = 1;
+      drawStickman(e.x, e.y, e.w, e.h, "purple");
+    } else {
+      drawStickman(e.x, e.y, e.w, e.h, "red");
+    }
 
     // Health bar
     ctx.fillStyle = "black";
-    ctx.fillRect(e.x, e.y - 10, e.w, 5);
+    ctx.fillRect(e.x, e.y - 8, e.w, 4);
 
     ctx.fillStyle = e.isBoss ? "purple" : "lime";
-    ctx.fillRect(e.x, e.y - 10, (e.hp / e.maxHp) * e.w, 5);
+    ctx.fillRect(e.x, e.y - 8, (e.hp / e.maxHp) * e.w, 4);
   });
 
-  // Attack effect
+  // Attack circle
   if (attackTimer > 0) {
-    ctx.strokeStyle = "yellow";
+    ctx.fillStyle = "rgba(255,255,0,0.3)";
     ctx.beginPath();
-    ctx.arc(
-      player.x + 10,
-      player.y + 10,
-      70,
-      0,
-      Math.PI * 2
-    );
-    ctx.stroke();
+    ctx.arc(player.x + 10, player.y + 20, 70, 0, Math.PI * 2);
+    ctx.fill();
     attackTimer--;
   }
 
-  // Damage text
+  // Damage numbers
   ctx.fillStyle = "yellow";
   ctx.font = "14px Arial";
   damageTexts.forEach(d => {
@@ -192,13 +225,15 @@ function draw() {
 
   // UI
   ctx.fillStyle = "white";
-  ctx.font = "20px Arial";
+  ctx.font = "18px Arial";
   ctx.fillText("Wave: " + wave, 10, 20);
-  ctx.fillText("HP: " + player.hp, 10, 45);
+  ctx.fillText("HP: " + player.hp, 10, 40);
 
-  if (wave % 20 === 0 && enemies.length > 0) {
+  // Boss text
+  if (wave % 10 === 0) {
     ctx.fillStyle = "purple";
-    ctx.fillText("BOSS WAVE", canvas.width / 2 - 60, 30);
+    ctx.font = "24px Arial";
+    ctx.fillText("BOSS WAVE", canvas.width / 2 - 70, 40);
   }
 }
 
@@ -209,7 +244,7 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// ===== JOYSTICK =====
+// ===== CONTROLS =====
 const joystick = document.getElementById("joystick");
 const stick = document.getElementById("stick");
 const attackBtn = document.getElementById("attackBtn");
@@ -245,7 +280,6 @@ joystick.addEventListener("touchend", () => {
   stick.style.top = "30px";
 });
 
-// Attack button
 attackBtn.addEventListener("touchstart", attack);
 
 // ===== START =====
