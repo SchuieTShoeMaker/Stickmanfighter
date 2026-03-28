@@ -2,63 +2,41 @@ body {
   margin: 0;
   background: #111;
   overflow: hidden;
-  color: white;
-  font-family: Arial;
+
+  /* 🔥 STOP ALL ZOOM / SCROLL */
+  touch-action: none;
 }
 
-/* ===== MENU ===== */
-#menu {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  background: #111;
-  text-align: center;
-  padding-top: 100px;
-  z-index: 10;
-}
-
-#menu button {
-  margin: 10px;
-  padding: 10px 20px;
-  font-size: 18px;
-}
-
-/* ===== GAME ===== */
+/* CANVAS */
 canvas {
-  display: none;
+  display: block;
+  margin: 0 auto;
   background: #222;
+  width: 100vw;
+  height: 60vh;
 }
 
-/* ===== UI ===== */
-#ui {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-}
-
-#ui button {
-  margin-left: 5px;
-  padding: 8px 12px;
-}
-
-/* ===== MOBILE CONTROLS ===== */
+/* CONTROLS */
 #controls {
-  display: none;
   position: fixed;
   bottom: 40px;
   width: 100%;
+  display: flex;
   justify-content: space-between;
   padding: 0 30px;
 }
 
+/* JOYSTICK */
 #joystick {
   width: 100px;
   height: 100px;
   background: #333;
   border-radius: 50%;
   position: relative;
+  touch-action: none;
 }
 
+/* STICK */
 #stick {
   width: 40px;
   height: 40px;
@@ -69,7 +47,13 @@ canvas {
   top: 30px;
 }
 
+/* ATTACK BUTTON */
 #attackBtn {
   font-size: 24px;
   padding: 20px;
+  border-radius: 50%;
+
+  /* 🔥 FIX DOUBLE TAP ZOOM */
+  touch-action: manipulation;
+  user-select: none;
 }
