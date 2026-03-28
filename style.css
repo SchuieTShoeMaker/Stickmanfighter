@@ -3,7 +3,12 @@ body {
   background: #111;
   overflow: hidden;
 
-  /* 🔥 STOP ALL ZOOM / SCROLL */
+  /* 🔥 STOP ALL TOUCH ZOOM */
+  touch-action: none;
+}
+
+/* extra safety */
+* {
   touch-action: none;
 }
 
@@ -33,7 +38,6 @@ canvas {
   background: #333;
   border-radius: 50%;
   position: relative;
-  touch-action: none;
 }
 
 /* STICK */
@@ -52,8 +56,5 @@ canvas {
   font-size: 24px;
   padding: 20px;
   border-radius: 50%;
-
-  /* 🔥 FIX DOUBLE TAP ZOOM */
-  touch-action: manipulation;
   user-select: none;
 }
