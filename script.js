@@ -1,4 +1,4 @@
-// ===== CANVAS SETUP =====
+// ===== CANVAS =====
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -6,35 +6,14 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 // ===== GAME STATE =====
-let gameStarted = false;
-let difficulty = "normal";
-
 let enemies = [];
 let bullets = [];
-let boss = null;
-
-// ===== MENU BUTTON FIX =====
-const buttons = document.querySelectorAll(".difficulty-btn");
-
-buttons.forEach(btn => {
-    btn.addEventListener("click", () => {
-        buttons.forEach(b => {
-            b.style.background = "white";
-            b.style.color = "black";
-        });
-
-        btn.style.background = "blue"; // 🔵 selected color
-        btn.style.color = "white";
-
-        difficulty = btn.dataset.diff;
-        startGame();
-    });
-});
+let gameOver = false;
 
 // ===== PLAYER =====
 const player = {
     x: canvas.width / 2,
-    y: canvas.height - 100,
+    y: canvas.height - 120,
     size: 30,
     speed: 5
 };
@@ -45,85 +24,79 @@ let keys = {};
 window.addEventListener("keydown", e => keys[e.key] = true);
 window.addEventListener("keyup", e => keys[e.key] = false);
 
-// ===== SHOOTING =====
-window.addEventListener("click", () => {
+// ===== ATTACK =====
+function attack() {
     bullets.push({
         x: player.x,
         y: player.y,
-        size: 5,
+        size: 6,
         speed: 8
     });
-});
-
-// ===== START GAME =====
-function startGame() {
-    gameStarted = true;
-    enemies = [];
-    bullets = [];
-    boss = null;
-
-    spawnEnemies();
-    gameLoop();
 }
 
-// ===== ENEMY SPAWN =====
-function spawnEnemies() {
-    setInterval(() => {
-        if (!gameStarted) return;
+// mobile button
+const attackBtn = document.getElementById("attackBtn");
+attackBtn.addEventListener("touchstart", attack);
 
+// ===== ENEMY SPAWN (WAVES) =====
+function spawnWave() {
+    for (let i = 0; i < 5; i++) {
         enemies.push({
             x: Math.random() * canvas.width,
-            y: -20,
+            y: -Math.random() * 200,
             size: 20,
             speed: 2 + Math.random() * 2
         });
+    }
 
-    }, 1000);
+    // next wave
+    setTimeout(spawnWave, 3000);
 }
-
-// ===== CATNAP BOSS =====
-function spawnBoss() {
-    boss = {
-        x: canvas.width / 2,
-        y: 100,
-        size: 80,
-        hp: 100,
-        direction: 1,
-        sleepWave: 0
-    };
-}
-
-// spawn boss after time
-setTimeout(spawnBoss, 15000);
 
 // ===== UPDATE =====
 function update() {
+    if (gameOver) return;
+
     // movement
     if (keys["ArrowLeft"]) player.x -= player.speed;
     if (keys["ArrowRight"]) player.x += player.speed;
 
     // bullets
-    bullets.forEach((b, i) => {
+    bullets.forEach((b, bi) => {
         b.y -= b.speed;
-        if (b.y < 0) bullets.splice(i, 1);
+
+        if (b.y < 0) bullets.splice(bi, 1);
+
+        // hit enemies
+        enemies.forEach((e, ei) => {
+            if (
+                b.x < e.x + e.size &&
+                b.x + b.size > e.x &&
+                b.y < e.y + e.size &&
+                b.y + b.size > e.y
+            ) {
+                enemies.splice(ei, 1);
+                bullets.splice(bi, 1);
+            }
+        });
     });
 
     // enemies
     enemies.forEach((e, i) => {
         e.y += e.speed;
-        if (e.y > canvas.height) enemies.splice(i, 1);
-    });
 
-    // boss movement (CATNAP style)
-    if (boss) {
-        boss.x += boss.direction * 2;
-
-        if (boss.x < 0 || boss.x > canvas.width) {
-            boss.direction *= -1;
+        // hit player
+        if (
+            e.x < player.x + player.size &&
+            e.x + e.size > player.x &&
+            e.y < player.y + player.size &&
+            e.y + e.size > player.y
+        ) {
+            gameOver = true;
         }
 
-        boss.sleepWave += 0.05;
-    }
+        if (e.y > canvas.height) enemies.splice(i, 1);
+    });
 }
 
 // ===== DRAW =====
@@ -146,37 +119,26 @@ function draw() {
         ctx.fillRect(e.x, e.y, e.size, e.size);
     });
 
-    // ===== CATNAP BOSS DRAW =====
-    if (boss) {
-        // body
-        ctx.fillStyle = "purple";
-        ctx.fillRect(boss.x, boss.y, boss.size, boss.size);
-
-        // eyes (sleepy vibe)
+    // game over
+    if (gameOver) {
         ctx.fillStyle = "white";
-        ctx.fillRect(boss.x + 10, boss.y + 20, 10, 5);
-        ctx.fillRect(boss.x + 50, boss.y + 20, 10, 5);
-
-        // sleep wave effect
-        ctx.beginPath();
-        ctx.arc(
-            boss.x + boss.size / 2,
-            boss.y + boss.size / 2,
-            100 + Math.sin(boss.sleepWave) * 20,
-            0,
-            Math.PI * 2
-        );
-        ctx.strokeStyle = "rgba(150,0,255,0.3)";
-        ctx.stroke();
+        ctx.font = "40px Arial";
+        ctx.fillText("GAME OVER", canvas.width / 2 - 120, canvas.height / 2);
     }
 }
 
-// ===== GAME LOOP =====
+// ===== LOOP =====
 function gameLoop() {
-    if (!gameStarted) return;
-
     update();
     draw();
-
     requestAnimationFrame(gameLoop);
 }
+
+// ===== RESTART =====
+canvas.addEventListener("touchstart", () => {
+    if (gameOver) location.reload();
+});
+
+// ===== START =====
+spawnWave();
+gameLoop();
