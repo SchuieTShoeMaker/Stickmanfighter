@@ -31,7 +31,11 @@ let playerHitTimer = 0;
 let enemies = [];
 let wave = 1;
 let attackTimer = 0;
-let money = 0; // 💰 NEW
+
+let money = 0;
+let playerDamage = 15;
+let playerArmor = 0;
+let hasPoison = false;
 
 // ===== INPUT =====
 let keys = {};
@@ -50,7 +54,8 @@ let joyX = 0;
 function spawnWave() {
   enemies = [];
 
-  if (wave % 10 === 0) {
+  // Boss every 5 waves
+  if (wave % 5 === 0) {
     enemies.push({
       x: canvas.width / 2,
       w: 60,
@@ -58,7 +63,9 @@ function spawnWave() {
       hp: 300,
       maxHp: 300,
       speed: 1,
-      isBoss: true
+      isBoss: true,
+      poison: 0,
+      dead: false
     });
     return;
   }
@@ -71,7 +78,9 @@ function spawnWave() {
       hp: 30,
       maxHp: 30,
       speed: 1.5,
-      isBoss: false
+      isBoss: false,
+      poison: 0,
+      dead: false
     });
   }
 }
@@ -84,9 +93,36 @@ function attack() {
     const dist = Math.abs(e.x - player.x);
 
     if (dist < 60) {
-      e.hp -= 15;
+      e.hp -= playerDamage;
+
+      // poison effect
+      if (hasPoison) {
+        e.poison = 60;
+      }
     }
   });
+}
+
+// ===== SHOP =====
+function buyDamage() {
+  if (money >= 50) {
+    money -= 50;
+    playerDamage += 5;
+  }
+}
+
+function buyArmor() {
+  if (money >= 100) {
+    money -= 100;
+    playerArmor += 1;
+  }
+}
+
+function buyPoison() {
+  if (money >= 150 && !hasPoison) {
+    money -= 150;
+    hasPoison = true;
+  }
 }
 
 // ===== UPDATE =====
@@ -124,28 +160,39 @@ function update() {
     if (e.x < player.x) e.x += e.speed;
     else e.x -= e.speed;
 
+    // damage player
     if (Math.abs(e.x - player.x) < 20) {
-      player.hp -= e.isBoss ? 10 : 2;
+      let damage = e.isBoss ? 10 : 2;
+      damage -= playerArmor;
+      if (damage < 0) damage = 0;
+
+      player.hp -= damage;
       playerHitTimer = 10;
     }
-  });
 
-  // 💰 REMOVE DEAD + GIVE MONEY
-  enemies = enemies.filter(e => {
-    if (e.hp <= 0) {
-      money += e.isBoss ? 100 : 10;
-      return false;
+    // poison damage
+    if (e.poison > 0) {
+      e.hp -= 0.3;
+      e.poison--;
     }
-    return true;
+
+    // give money on death
+    if (e.hp <= 0 && !e.dead) {
+      money += e.isBoss ? 50 : 10;
+      e.dead = true;
+    }
   });
 
-  // NEXT WAVE
+  // remove dead enemies
+  enemies = enemies.filter(e => e.hp > 0);
+
+  // next wave
   if (enemies.length === 0) {
     wave++;
     spawnWave();
   }
 
-  // GAME OVER
+  // game over
   if (player.hp <= 0) {
     alert("Game Over");
     location.reload();
@@ -216,7 +263,9 @@ function draw() {
   ctx.font = "18px Arial";
   ctx.fillText("Wave: " + wave, 10, 20);
   ctx.fillText("HP: " + player.hp, 10, 40);
-  ctx.fillText("Money: $" + money, 10, 60); // 💰 NEW
+  ctx.fillText("Money: $" + money, 10, 60);
+  ctx.fillText("Damage: " + playerDamage, 10, 80);
+  ctx.fillText("Armor: " + playerArmor, 10, 100);
 }
 
 // ===== LOOP =====
