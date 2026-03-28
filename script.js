@@ -22,23 +22,28 @@ const player = {
   vy: 0,
   speed: 3,
   jump: 10,
-  onGround: false
+  onGround: false,
+  walkAnim: 0,
+  attackAnim: 0
 };
 
 let playerHitTimer = 0;
-
-// 💥 SCREEN SHAKE
 let shake = 0;
 
 // ===== GAME STATE =====
 let enemies = [];
 let wave = 1;
-let attackTimer = 0;
 
 let money = 0;
 let playerDamage = 15;
 let playerArmor = 0;
 let hasPoison = false;
+
+// SHOP + WEAPONS
+let inShop = false;
+let weapon = "sword";
+let attackCooldownMax = 20;
+let attackCooldown = 0;
 
 // ===== INPUT =====
 let keys = {};
@@ -70,7 +75,8 @@ function spawnWave() {
       poison: 0,
       dead: false,
       attackCooldown: 0,
-      attackAnim: 0
+      attackAnim: 0,
+      walkAnim: 0
     });
     return;
   }
@@ -87,14 +93,18 @@ function spawnWave() {
       poison: 0,
       dead: false,
       attackCooldown: 0,
-      attackAnim: 0
+      attackAnim: 0,
+      walkAnim: 0
     });
   }
 }
 
 // ===== ATTACK =====
 function attack() {
-  attackTimer = 10;
+  if (attackCooldown > 0) return;
+
+  player.attackAnim = 10;
+  attackCooldown = attackCooldownMax;
 
   enemies.forEach(e => {
     const dist = Math.abs(e.x - player.x);
@@ -102,11 +112,29 @@ function attack() {
     if (dist < 60) {
       e.hp -= playerDamage;
 
-      if (hasPoison) {
-        e.poison = 60;
-      }
+      if (hasPoison) e.poison = 60;
     }
   });
+}
+
+// ===== WEAPONS =====
+function setWeapon(type) {
+  weapon = type;
+
+  if (type === "sword") {
+    playerDamage = 15;
+    attackCooldownMax = 20;
+  }
+
+  if (type === "dagger") {
+    playerDamage = 8;
+    attackCooldownMax = 8;
+  }
+
+  if (type === "hammer") {
+    playerDamage = 30;
+    attackCooldownMax = 40;
+  }
 }
 
 // ===== SHOP =====
@@ -131,9 +159,19 @@ function buyPoison() {
   }
 }
 
+function continueGame() {
+  inShop = false;
+  wave++;
+  spawnWave();
+  document.getElementById("shop").style.display = "none";
+}
+
 // ===== UPDATE =====
 function update() {
-  // ---- MOVEMENT ----
+  if (inShop) return;
+
+  if (attackCooldown > 0) attackCooldown--;
+
   player.vx = 0;
 
   if (keys["ArrowLeft"] || keys["a"]) player.vx = -player.speed;
@@ -142,11 +180,11 @@ function update() {
   player.vx += joyX * 0.05;
   player.x += player.vx;
 
-  // 🛑 SCREEN LIMIT
   if (player.x < 0) player.x = 0;
   if (player.x > canvas.width - player.w) player.x = canvas.width - player.w;
 
-  // ---- GRAVITY ----
+  if (Math.abs(player.vx) > 0.1) player.walkAnim += 0.2;
+
   player.vy += 0.5;
   player.y += player.vy;
 
@@ -154,20 +192,16 @@ function update() {
     player.y = ground() - player.h;
     player.vy = 0;
     player.onGround = true;
-  } else {
-    player.onGround = false;
-  }
+  } else player.onGround = false;
 
-  // ---- JUMP ----
   if ((keys["ArrowUp"] || keys["w"]) && player.onGround) {
     player.vy = -player.jump;
   }
 
-  // ---- ENEMIES ----
   enemies.forEach(e => {
     e.y = ground() - e.h;
+    e.walkAnim += 0.15;
 
-    // 👹 BOSS STAGES
     if (e.isBoss) {
       let hpPercent = e.hp / e.maxHp;
 
@@ -182,11 +216,9 @@ function update() {
       }
     }
 
-    // movement
     if (e.x < player.x) e.x += e.speed;
     else e.x -= e.speed;
 
-    // 💥 ATTACK
     if (Math.abs(e.x - player.x) < 20 && e.attackCooldown <= 0) {
       let damage = e.isBoss ? (e.stage === 3 ? 20 : 12) : 2;
 
@@ -196,45 +228,37 @@ function update() {
       player.hp -= damage;
       playerHitTimer = 10;
 
-      // 💥 KNOCKBACK
       let dir = player.x > e.x ? 1 : -1;
       player.vx += dir * (e.isBoss ? 8 : 4);
 
-      // 📳 SCREEN SHAKE
       shake = e.isBoss ? 15 : 8;
 
-      // animation
       e.attackAnim = 10;
-
       e.attackCooldown = e.isBoss ? 40 : 25;
     }
 
     if (e.attackCooldown > 0) e.attackCooldown--;
     if (e.attackAnim > 0) e.attackAnim--;
 
-    // poison
     if (e.poison > 0) {
       e.hp -= 0.3;
       e.poison--;
     }
 
-    // money
     if (e.hp <= 0 && !e.dead) {
       money += e.isBoss ? 50 : 10;
       e.dead = true;
     }
   });
 
-  // remove dead
   enemies = enemies.filter(e => e.hp > 0);
 
-  // next wave
-  if (enemies.length === 0) {
-    wave++;
-    spawnWave();
+  if (enemies.length === 0 && !inShop) {
+    inShop = true;
+    document.getElementById("shop").style.display = "block";
+    document.getElementById("shopMoney").innerText = money;
   }
 
-  // game over
   if (player.hp <= 0) {
     alert("Game Over");
     location.reload();
@@ -242,9 +266,11 @@ function update() {
 }
 
 // ===== DRAW STICKMAN =====
-function drawStickman(x, y, w, h, color) {
+function drawStickman(x, y, w, h, color, walk, attack) {
   ctx.strokeStyle = color;
   ctx.lineWidth = 2;
+
+  let swing = Math.sin(walk) * 6;
 
   ctx.beginPath();
   ctx.arc(x + w/2, y + 10, 6, 0, Math.PI*2);
@@ -255,16 +281,18 @@ function drawStickman(x, y, w, h, color) {
   ctx.lineTo(x + w/2, y + 30);
   ctx.stroke();
 
+  let armOffset = attack > 0 ? 10 : swing;
+
   ctx.beginPath();
-  ctx.moveTo(x + w/2 - 8, y + 22);
-  ctx.lineTo(x + w/2 + 8, y + 22);
+  ctx.moveTo(x + w/2, y + 22);
+  ctx.lineTo(x + w/2 + armOffset, y + 22);
   ctx.stroke();
 
   ctx.beginPath();
   ctx.moveTo(x + w/2, y + 30);
-  ctx.lineTo(x + w/2 - 6, y + 40);
+  ctx.lineTo(x + w/2 - swing, y + 40);
   ctx.moveTo(x + w/2, y + 30);
-  ctx.lineTo(x + w/2 + 6, y + 40);
+  ctx.lineTo(x + w/2 + swing, y + 40);
   ctx.stroke();
 }
 
@@ -272,7 +300,6 @@ function drawStickman(x, y, w, h, color) {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // 📳 APPLY SCREEN SHAKE
   let shakeX = (Math.random() - 0.5) * shake;
   let shakeY = (Math.random() - 0.5) * shake;
 
@@ -281,21 +308,21 @@ function draw() {
 
   if (shake > 0) shake--;
 
-  // ground
   ctx.fillStyle = "#222";
   ctx.fillRect(0, ground(), canvas.width, 50);
 
-  // player
   drawStickman(
     player.x,
     player.y,
     player.w,
     player.h,
-    playerHitTimer > 0 ? "red" : "white"
+    playerHitTimer > 0 ? "red" : "white",
+    player.walkAnim,
+    player.attackAnim
   );
-  if (playerHitTimer > 0) playerHitTimer--;
 
-  // enemies
+  if (player.attackAnim > 0) player.attackAnim--;
+
   enemies.forEach(e => {
     let drawX = e.x;
 
@@ -304,31 +331,23 @@ function draw() {
       drawX += dir * (e.isBoss ? 10 : 5);
     }
 
-    if (e.isBoss) {
-      let color = e.stage === 1 ? "purple" :
-                  e.stage === 2 ? "magenta" : "red";
-
-      ctx.fillStyle = "rgba(150,0,200,0.2)";
-      ctx.beginPath();
-      ctx.arc(drawX + 30, e.y + 40, 60, 0, Math.PI*2);
-      ctx.fill();
-
-      drawStickman(drawX, e.y, e.w, e.h, color);
-    } else {
-      drawStickman(drawX, e.y, e.w, e.h, "red");
-    }
+    drawStickman(
+      drawX,
+      e.y,
+      e.w,
+      e.h,
+      e.isBoss ? "purple" : "red",
+      e.walkAnim,
+      e.attackAnim
+    );
   });
 
   ctx.restore();
 
-  // UI (no shake)
   ctx.fillStyle = "white";
-  ctx.font = "18px Arial";
   ctx.fillText("Wave: " + wave, 10, 20);
   ctx.fillText("HP: " + player.hp, 10, 40);
   ctx.fillText("Money: $" + money, 10, 60);
-  ctx.fillText("Damage: " + playerDamage, 10, 80);
-  ctx.fillText("Armor: " + playerArmor, 10, 100);
 }
 
 // ===== LOOP =====
@@ -338,23 +357,7 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// ===== MOBILE CONTROLS =====
-joystick.addEventListener("touchmove", e => {
-  e.preventDefault();
-  const rect = joystick.getBoundingClientRect();
-  const touch = e.touches[0];
-
-  let x = touch.clientX - rect.left - 50;
-  joyX = Math.max(-40, Math.min(40, x));
-
-  stick.style.left = 50 + joyX - 20 + "px";
-}, { passive: false });
-
-joystick.addEventListener("touchend", () => {
-  joyX = 0;
-  stick.style.left = "30px";
-});
-
+// ===== CONTROLS =====
 attackBtn.addEventListener("touchstart", e => {
   e.preventDefault();
   attack();
@@ -364,11 +367,6 @@ jumpBtn.addEventListener("touchstart", e => {
   e.preventDefault();
   if (player.onGround) player.vy = -player.jump;
 }, { passive: false });
-
-// PC attack
-document.addEventListener("keydown", e => {
-  if (e.key === " ") attack();
-});
 
 // ===== START =====
 spawnWave();
