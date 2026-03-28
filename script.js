@@ -26,7 +26,9 @@ const player = {
 };
 
 let playerHitTimer = 0;
-let damageCooldown = 0;
+
+// 💥 SCREEN SHAKE
+let shake = 0;
 
 // ===== GAME STATE =====
 let enemies = [];
@@ -66,7 +68,9 @@ function spawnWave() {
       isBoss: true,
       stage: 1,
       poison: 0,
-      dead: false
+      dead: false,
+      attackCooldown: 0,
+      attackAnim: 0
     });
     return;
   }
@@ -81,7 +85,9 @@ function spawnWave() {
       speed: 1.5,
       isBoss: false,
       poison: 0,
-      dead: false
+      dead: false,
+      attackCooldown: 0,
+      attackAnim: 0
     });
   }
 }
@@ -180,8 +186,8 @@ function update() {
     if (e.x < player.x) e.x += e.speed;
     else e.x -= e.speed;
 
-    // damage player with cooldown
-    if (Math.abs(e.x - player.x) < 20 && damageCooldown <= 0) {
+    // 💥 ATTACK
+    if (Math.abs(e.x - player.x) < 20 && e.attackCooldown <= 0) {
       let damage = e.isBoss ? (e.stage === 3 ? 20 : 12) : 2;
 
       damage -= playerArmor;
@@ -189,8 +195,22 @@ function update() {
 
       player.hp -= damage;
       playerHitTimer = 10;
-      damageCooldown = 20;
+
+      // 💥 KNOCKBACK
+      let dir = player.x > e.x ? 1 : -1;
+      player.vx += dir * (e.isBoss ? 8 : 4);
+
+      // 📳 SCREEN SHAKE
+      shake = e.isBoss ? 15 : 8;
+
+      // animation
+      e.attackAnim = 10;
+
+      e.attackCooldown = e.isBoss ? 40 : 25;
     }
+
+    if (e.attackCooldown > 0) e.attackCooldown--;
+    if (e.attackAnim > 0) e.attackAnim--;
 
     // poison
     if (e.poison > 0) {
@@ -204,8 +224,6 @@ function update() {
       e.dead = true;
     }
   });
-
-  if (damageCooldown > 0) damageCooldown--;
 
   // remove dead
   enemies = enemies.filter(e => e.hp > 0);
@@ -254,6 +272,15 @@ function drawStickman(x, y, w, h, color) {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // 📳 APPLY SCREEN SHAKE
+  let shakeX = (Math.random() - 0.5) * shake;
+  let shakeY = (Math.random() - 0.5) * shake;
+
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+
+  if (shake > 0) shake--;
+
   // ground
   ctx.fillStyle = "#222";
   ctx.fillRect(0, ground(), canvas.width, 50);
@@ -270,22 +297,31 @@ function draw() {
 
   // enemies
   enemies.forEach(e => {
+    let drawX = e.x;
+
+    if (e.attackAnim > 0) {
+      let dir = player.x > e.x ? 1 : -1;
+      drawX += dir * (e.isBoss ? 10 : 5);
+    }
+
     if (e.isBoss) {
       let color = e.stage === 1 ? "purple" :
                   e.stage === 2 ? "magenta" : "red";
 
       ctx.fillStyle = "rgba(150,0,200,0.2)";
       ctx.beginPath();
-      ctx.arc(e.x + 30, e.y + 40, 60, 0, Math.PI*2);
+      ctx.arc(drawX + 30, e.y + 40, 60, 0, Math.PI*2);
       ctx.fill();
 
-      drawStickman(e.x, e.y, e.w, e.h, color);
+      drawStickman(drawX, e.y, e.w, e.h, color);
     } else {
-      drawStickman(e.x, e.y, e.w, e.h, "red");
+      drawStickman(drawX, e.y, e.w, e.h, "red");
     }
   });
 
-  // UI
+  ctx.restore();
+
+  // UI (no shake)
   ctx.fillStyle = "white";
   ctx.font = "18px Arial";
   ctx.fillText("Wave: " + wave, 10, 20);
