@@ -3,20 +3,15 @@ const ctx = canvas.getContext("2d");
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight * 0.6;
+
+// Player
 let player = {
   x: 100,
   y: 200,
   hp: 100
 };
-let keys = {};
 
-document.addEventListener("keydown", (e) => {
-  keys[e.key] = true;
-});
-
-document.addEventListener("keyup", (e) => {
-  keys[e.key] = false;
-});
+// Enemies
 let enemies = [];
 let wave = 1;
 
@@ -25,74 +20,83 @@ function spawnWave() {
   enemies = [];
   for (let i = 0; i < wave * 2; i++) {
     enemies.push({
-      x: 500 + i * 40,
+      x: 400 + i * 50,
       y: 200,
       hp: 20
     });
   }
 }
 
-// Attack system
-document.addEventListener("keydown", (e) => {
-  if (e.key === " ") {
-    enemies.forEach(enemy => {
-      if (Math.abs(enemy.x - player.x) < 50) {
-        enemy.hp -= 10;
-      }
-    });
-  }
-});
+// Attack
+function attack() {
+  console.log("ATTACK!");
 
+  enemies.forEach(enemy => {
+    if (Math.abs(enemy.x - player.x) < 60 &&
+        Math.abs(enemy.y - player.y) < 60) {
+      enemy.hp -= 10;
+    }
+  });
+}
+
+// Update game
 function update() {
-  // Movement
-player.x += joyX * 0.1;
-player.y += joyY * 0.1;
+  // Movement (joystick)
+  player.x += joyX * 0.1;
+  player.y += joyY * 0.1;
+
+  // Enemies follow player 🔥
+  enemies.forEach(e => {
+    if (e.x < player.x) e.x += 1;
+    if (e.x > player.x) e.x -= 1;
+    if (e.y < player.y) e.y += 1;
+    if (e.y > player.y) e.y -= 1;
+  });
+
+  // Remove dead enemies
   enemies = enemies.filter(e => e.hp > 0);
 
+  // Next wave
   if (enemies.length === 0) {
     wave++;
     spawnWave();
   }
 }
 
+// Draw everything
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Player
-  ctx.fillStyle = "white";
-  ctx.fillRect(player.x, player.y, 20, 40);
+  // Player (BIG + visible)
+  ctx.fillStyle = "lime";
+  ctx.fillRect(player.x, player.y, 40, 60);
 
-  // Enemies
+  // Enemies (bigger + red)
   ctx.fillStyle = "red";
   enemies.forEach(e => {
-    ctx.fillRect(e.x, e.y, 20, 40);
+    ctx.fillRect(e.x, e.y, 30, 50);
   });
 
+  // UI text
   ctx.fillStyle = "white";
+  ctx.font = "20px Arial";
   ctx.fillText("Wave: " + wave, 10, 20);
-}
-function move(direction) {
-  if (direction === "left") player.x -= 10;
-  if (direction === "right") player.x += 10;
-  if (direction === "up") player.y -= 10;
-  if (direction === "down") player.y += 10;
+  ctx.fillText("HP: " + player.hp, 10, 45);
 }
 
-function attack() {
-  enemies.forEach(enemy => {
-    if (Math.abs(enemy.x - player.x) < 50) {
-      enemy.hp -= 10;
-    }
-  });
-}
+// Game loop
 function gameLoop() {
   update();
   draw();
   requestAnimationFrame(gameLoop);
 }
 
+// Start game
 spawnWave();
 gameLoop();
+
+
+// 🎮 JOYSTICK CONTROLS
 const joystick = document.getElementById("joystick");
 const stick = document.getElementById("stick");
 const attackBtn = document.getElementById("attackBtn");
@@ -108,6 +112,7 @@ joystick.addEventListener("touchmove", (e) => {
   let y = touch.clientY - rect.top - 50;
 
   const dist = Math.sqrt(x * x + y * y);
+
   if (dist > 40) {
     x = (x / dist) * 40;
     y = (y / dist) * 40;
@@ -127,4 +132,5 @@ joystick.addEventListener("touchend", () => {
   stick.style.top = "30px";
 });
 
+// Attack button
 attackBtn.addEventListener("touchstart", attack);
