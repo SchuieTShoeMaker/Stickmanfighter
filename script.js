@@ -211,7 +211,7 @@ function update() {
 
   if (attackCooldown > 0) attackCooldown--;
   if (abilityTimer > 0) abilityTimer--;
-
+if (jumpCooldown > 0) jumpCooldown--;
 // joystick movement
 let targetVX = joyX * player.speed;
 
