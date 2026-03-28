@@ -32,6 +32,7 @@ let shake = 0;
 
 // ===== GAME STATE =====
 let enemies = [];
+let projectiles = [];
 let wave = 1;
 
 let money = 0;
@@ -39,11 +40,22 @@ let playerDamage = 15;
 let playerArmor = 0;
 let hasPoison = false;
 
-// SHOP + WEAPONS
+// ===== SHOP / WEAPONS =====
 let inShop = false;
 let weapon = "sword";
 let attackCooldownMax = 20;
 let attackCooldown = 0;
+
+// ===== ABILITIES =====
+let abilityTimer = 0;
+let isDashing = false;
+
+// ===== ENEMY UNLOCKS =====
+let unlockedEnemies = {
+  fast: false,
+  tank: false,
+  ranged: false
+};
 
 // ===== INPUT =====
 let keys = {};
@@ -62,6 +74,12 @@ let joyX = 0;
 function spawnWave() {
   enemies = [];
 
+  // unlock system
+  if (wave >= 3) unlockedEnemies.fast = true;
+  if (wave >= 6) unlockedEnemies.tank = true;
+  if (wave >= 9) unlockedEnemies.ranged = true;
+
+  // boss
   if (wave % 5 === 0) {
     enemies.push({
       x: canvas.width / 2,
@@ -82,7 +100,14 @@ function spawnWave() {
   }
 
   for (let i = 0; i < wave * 2; i++) {
-    enemies.push({
+    let types = ["normal"];
+    if (unlockedEnemies.fast) types.push("fast");
+    if (unlockedEnemies.tank) types.push("tank");
+    if (unlockedEnemies.ranged) types.push("ranged");
+
+    let type = types[Math.floor(Math.random() * types.length)];
+
+    let enemy = {
       x: Math.random() * canvas.width,
       w: 20,
       h: 40,
@@ -90,12 +115,33 @@ function spawnWave() {
       maxHp: 30,
       speed: 1.5,
       isBoss: false,
+      type: type,
       poison: 0,
       dead: false,
       attackCooldown: 0,
       attackAnim: 0,
-      walkAnim: 0
-    });
+      walkAnim: 0,
+      shootCooldown: 0
+    };
+
+    if (type === "fast") {
+      enemy.speed = 3;
+      enemy.hp = 20;
+    }
+
+    if (type === "tank") {
+      enemy.hp = 80;
+      enemy.maxHp = 80;
+      enemy.speed = 0.8;
+    }
+
+    if (type === "ranged") {
+      enemy.hp = 25;
+      enemy.speed = 1.2;
+      enemy.shootCooldown = 60;
+    }
+
+    enemies.push(enemy);
   }
 }
 
@@ -106,64 +152,31 @@ function attack() {
   player.attackAnim = 10;
   attackCooldown = attackCooldownMax;
 
-  enemies.forEach(e => {
-    const dist = Math.abs(e.x - player.x);
-
-    if (dist < 60) {
-      e.hp -= playerDamage;
-
-      if (hasPoison) e.poison = 60;
-    }
-  });
-}
-
-// ===== WEAPONS =====
-function setWeapon(type) {
-  weapon = type;
-
-  if (type === "sword") {
-    playerDamage = 15;
-    attackCooldownMax = 20;
+  if (weapon === "sword") {
+    abilityTimer = 10;
+    enemies.forEach(e => {
+      if (Math.abs(e.x - player.x) < 70) {
+        e.hp -= playerDamage;
+      }
+    });
   }
 
-  if (type === "dagger") {
-    playerDamage = 8;
-    attackCooldownMax = 8;
+  if (weapon === "dagger") {
+    isDashing = true;
+    abilityTimer = 10;
+    let dir = player.vx >= 0 ? 1 : -1;
+    player.vx = dir * 12;
   }
 
-  if (type === "hammer") {
-    playerDamage = 30;
-    attackCooldownMax = 40;
+  if (weapon === "hammer") {
+    abilityTimer = 15;
+    shake = 20;
+    enemies.forEach(e => {
+      if (Math.abs(e.x - player.x) < 100) {
+        e.hp -= playerDamage * 1.5;
+      }
+    });
   }
-}
-
-// ===== SHOP =====
-function buyDamage() {
-  if (money >= 50) {
-    money -= 50;
-    playerDamage += 5;
-  }
-}
-
-function buyArmor() {
-  if (money >= 100) {
-    money -= 100;
-    playerArmor += 1;
-  }
-}
-
-function buyPoison() {
-  if (money >= 150 && !hasPoison) {
-    money -= 150;
-    hasPoison = true;
-  }
-}
-
-function continueGame() {
-  inShop = false;
-  wave++;
-  spawnWave();
-  document.getElementById("shop").style.display = "none";
 }
 
 // ===== UPDATE =====
@@ -171,6 +184,7 @@ function update() {
   if (inShop) return;
 
   if (attackCooldown > 0) attackCooldown--;
+  if (abilityTimer > 0) abilityTimer--;
 
   player.vx = 0;
 
@@ -179,9 +193,6 @@ function update() {
 
   player.vx += joyX * 0.05;
   player.x += player.vx;
-
-  if (player.x < 0) player.x = 0;
-  if (player.x > canvas.width - player.w) player.x = canvas.width - player.w;
 
   if (Math.abs(player.vx) > 0.1) player.walkAnim += 0.2;
 
@@ -198,26 +209,41 @@ function update() {
     player.vy = -player.jump;
   }
 
+  if (isDashing && abilityTimer <= 0) isDashing = false;
+
+  if (isDashing) {
+    enemies.forEach(e => {
+      if (Math.abs(e.x - player.x) < 40) {
+        e.hp -= playerDamage * 0.5;
+      }
+    });
+  }
+
+  // ===== ENEMIES =====
   enemies.forEach(e => {
     e.y = ground() - e.h;
     e.walkAnim += 0.15;
 
     if (e.isBoss) {
       let hpPercent = e.hp / e.maxHp;
-
-      if (hpPercent < 0.66 && e.stage === 1) {
-        e.stage = 2;
-        e.speed = 2;
-      }
-
-      if (hpPercent < 0.33 && e.stage === 2) {
-        e.stage = 3;
-        e.speed = 3;
-      }
+      if (hpPercent < 0.66 && e.stage === 1) { e.stage = 2; e.speed = 2; }
+      if (hpPercent < 0.33 && e.stage === 2) { e.stage = 3; e.speed = 3; }
     }
 
     if (e.x < player.x) e.x += e.speed;
     else e.x -= e.speed;
+
+    // ranged attack
+    if (e.type === "ranged") {
+      if (e.shootCooldown <= 0) {
+        projectiles.push({
+          x: e.x,
+          y: e.y + 20,
+          vx: player.x > e.x ? 4 : -4
+        });
+        e.shootCooldown = 90;
+      } else e.shootCooldown--;
+    }
 
     if (Math.abs(e.x - player.x) < 20 && e.attackCooldown <= 0) {
       let damage = e.isBoss ? (e.stage === 3 ? 20 : 12) : 2;
@@ -253,6 +279,20 @@ function update() {
 
   enemies = enemies.filter(e => e.hp > 0);
 
+  // ===== PROJECTILES =====
+  projectiles.forEach(p => {
+    p.x += p.vx;
+
+    if (Math.abs(p.x - player.x) < 10 &&
+        Math.abs(p.y - player.y) < 20) {
+      player.hp -= 5;
+      shake = 5;
+    }
+  });
+
+  projectiles = projectiles.filter(p => p.x > 0 && p.x < canvas.width);
+
+  // ===== SHOP =====
   if (enemies.length === 0 && !inShop) {
     inShop = true;
     document.getElementById("shop").style.display = "block";
@@ -311,6 +351,20 @@ function draw() {
   ctx.fillStyle = "#222";
   ctx.fillRect(0, ground(), canvas.width, 50);
 
+  // dash effect
+  if (isDashing) {
+    ctx.fillStyle = "rgba(0,255,255,0.3)";
+    ctx.fillRect(player.x - 10, player.y, 40, player.h);
+  }
+
+  // slam effect
+  if (weapon === "hammer" && abilityTimer > 0) {
+    ctx.fillStyle = "rgba(255,200,0,0.3)";
+    ctx.beginPath();
+    ctx.arc(player.x + 10, player.y + 30, 80, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   drawStickman(
     player.x,
     player.y,
@@ -324,22 +378,19 @@ function draw() {
   if (player.attackAnim > 0) player.attackAnim--;
 
   enemies.forEach(e => {
-    let drawX = e.x;
+    let color = "red";
+    if (e.type === "fast") color = "orange";
+    if (e.type === "tank") color = "blue";
+    if (e.type === "ranged") color = "yellow";
+    if (e.isBoss) color = "purple";
 
-    if (e.attackAnim > 0) {
-      let dir = player.x > e.x ? 1 : -1;
-      drawX += dir * (e.isBoss ? 10 : 5);
-    }
+    drawStickman(e.x, e.y, e.w, e.h, color, e.walkAnim, e.attackAnim);
+  });
 
-    drawStickman(
-      drawX,
-      e.y,
-      e.w,
-      e.h,
-      e.isBoss ? "purple" : "red",
-      e.walkAnim,
-      e.attackAnim
-    );
+  // projectiles
+  ctx.fillStyle = "yellow";
+  projectiles.forEach(p => {
+    ctx.fillRect(p.x, p.y, 6, 6);
   });
 
   ctx.restore();
