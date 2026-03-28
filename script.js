@@ -63,7 +63,31 @@ const attackBtn = document.getElementById("attackBtn");
 const jumpBtn = document.getElementById("jumpBtn");
 
 let joyX = 0;
+// ===== JOYSTICK CONTROL =====
+let dragging = false;
 
+joystick.addEventListener("touchstart", e => {
+  dragging = true;
+});
+
+joystick.addEventListener("touchmove", e => {
+  if (!dragging) return;
+
+  let touch = e.touches[0];
+  let rect = joystick.getBoundingClientRect();
+
+  let x = touch.clientX - rect.left - 50;
+
+  joyX = Math.max(-1, Math.min(1, x / 40));
+
+  stick.style.left = (30 + joyX * 30) + "px";
+});
+
+joystick.addEventListener("touchend", () => {
+  dragging = false;
+  joyX = 0;
+  stick.style.left = "30px";
+});
 // ===== SPAWN =====
 function spawnWave() {
   enemies = [];
