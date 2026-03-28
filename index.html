@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Stickman Game</title>
+  <title>Stickman Survival</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <!-- ===== MENU ===== -->
 <div id="menu">
-  <h1>Stickman Game</h1>
+  <h1>Stickman Survival</h1>
 
-  <h3>Device</h3>
-  <button onclick="setDevice('mobile')">Mobile / Tablet</button>
-  <button onclick="setDevice('pc')">PC / Laptop</button>
+  <h2>Select Device</h2>
+  <button onclick="setDevice('mobile')">Mobile</button>
+  <button onclick="setDevice('pc')">PC</button>
 
-  <h3>Difficulty</h3>
+  <h2>Select Difficulty</h2>
   <button onclick="setDifficulty('easy')">Easy</button>
   <button onclick="setDifficulty('normal')">Normal</button>
   <button onclick="setDifficulty('hard')">Hard</button>
@@ -26,7 +26,13 @@
 <!-- ===== GAME ===== -->
 <canvas id="game"></canvas>
 
-<!-- ===== CONTROLS ===== -->
+<!-- ===== UI ===== -->
+<div id="ui">
+  <button id="pauseBtn">Pause</button>
+  <button id="restartBtn">Restart</button>
+</div>
+
+<!-- ===== MOBILE CONTROLS ===== -->
 <div id="controls">
   <div id="joystick">
     <div id="stick"></div>
