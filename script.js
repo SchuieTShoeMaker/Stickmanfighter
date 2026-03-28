@@ -26,6 +26,7 @@ const player = {
 };
 
 let playerHitTimer = 0;
+let damageCooldown = 0;
 
 // ===== GAME STATE =====
 let enemies = [];
@@ -54,7 +55,6 @@ let joyX = 0;
 function spawnWave() {
   enemies = [];
 
-  // Boss every 5 waves
   if (wave % 5 === 0) {
     enemies.push({
       x: canvas.width / 2,
@@ -64,6 +64,7 @@ function spawnWave() {
       maxHp: 300,
       speed: 1,
       isBoss: true,
+      stage: 1,
       poison: 0,
       dead: false
     });
@@ -95,7 +96,6 @@ function attack() {
     if (dist < 60) {
       e.hp -= playerDamage;
 
-      // poison effect
       if (hasPoison) {
         e.poison = 60;
       }
@@ -136,6 +136,10 @@ function update() {
   player.vx += joyX * 0.05;
   player.x += player.vx;
 
+  // 🛑 SCREEN LIMIT
+  if (player.x < 0) player.x = 0;
+  if (player.x > canvas.width - player.w) player.x = canvas.width - player.w;
+
   // ---- GRAVITY ----
   player.vy += 0.5;
   player.y += player.vy;
@@ -157,33 +161,53 @@ function update() {
   enemies.forEach(e => {
     e.y = ground() - e.h;
 
+    // 👹 BOSS STAGES
+    if (e.isBoss) {
+      let hpPercent = e.hp / e.maxHp;
+
+      if (hpPercent < 0.66 && e.stage === 1) {
+        e.stage = 2;
+        e.speed = 2;
+      }
+
+      if (hpPercent < 0.33 && e.stage === 2) {
+        e.stage = 3;
+        e.speed = 3;
+      }
+    }
+
+    // movement
     if (e.x < player.x) e.x += e.speed;
     else e.x -= e.speed;
 
-    // damage player
-    if (Math.abs(e.x - player.x) < 20) {
-      let damage = e.isBoss ? 10 : 2;
+    // damage player with cooldown
+    if (Math.abs(e.x - player.x) < 20 && damageCooldown <= 0) {
+      let damage = e.isBoss ? (e.stage === 3 ? 20 : 12) : 2;
+
       damage -= playerArmor;
       if (damage < 0) damage = 0;
 
       player.hp -= damage;
       playerHitTimer = 10;
+      damageCooldown = 20;
     }
 
-    // poison damage
+    // poison
     if (e.poison > 0) {
       e.hp -= 0.3;
       e.poison--;
     }
 
-    // give money on death
+    // money
     if (e.hp <= 0 && !e.dead) {
       money += e.isBoss ? 50 : 10;
       e.dead = true;
     }
   });
 
-  // remove dead enemies
+  if (damageCooldown > 0) damageCooldown--;
+
+  // remove dead
   enemies = enemies.filter(e => e.hp > 0);
 
   // next wave
@@ -247,12 +271,15 @@ function draw() {
   // enemies
   enemies.forEach(e => {
     if (e.isBoss) {
+      let color = e.stage === 1 ? "purple" :
+                  e.stage === 2 ? "magenta" : "red";
+
       ctx.fillStyle = "rgba(150,0,200,0.2)";
       ctx.beginPath();
       ctx.arc(e.x + 30, e.y + 40, 60, 0, Math.PI*2);
       ctx.fill();
 
-      drawStickman(e.x, e.y, e.w, e.h, "purple");
+      drawStickman(e.x, e.y, e.w, e.h, color);
     } else {
       drawStickman(e.x, e.y, e.w, e.h, "red");
     }
