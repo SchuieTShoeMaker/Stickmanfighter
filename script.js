@@ -151,19 +151,169 @@ function update() {
   }
 }
 
+// ===== 🔥 STICKMAN DRAW FUNCTION =====
+function drawStickman(x, y, w, h, color) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+
+  // head
+  ctx.beginPath();
+  ctx.arc(x + w / 2, y + 8, 6, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // body
+  ctx.beginPath();
+  ctx.moveTo(x + w / 2, y + 14);
+  ctx.lineTo(x + w / 2, y + 28);
+  ctx.stroke();
+
+  // arms
+  ctx.beginPath();
+  ctx.moveTo(x + w / 2 - 8, y + 20);
+  ctx.lineTo(x + w / 2 + 8, y + 20);
+  ctx.stroke();
+
+  // legs
+  ctx.beginPath();
+  ctx.moveTo(x + w / 2, y + 28);
+  ctx.lineTo(x + w / 2 - 6, y + 40);
+  ctx.moveTo(x + w / 2, y + 28);
+  ctx.lineTo(x + w / 2 + 6, y + 40);
+  ctx.stroke();
+}
+
 // ===== DRAW =====
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // 🌑 DARK SCREEN ON BOSS WAVE
+  if (wave % 10 === 0) {
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // PLAYER (flash when hit)
+  if (playerHitTimer > 0) {
+    drawStickman(player.x, player.y, player.w, player.h, "red");
+    playerHitTimer--;
+  } else {
+    drawStickman(player.x, player.y, player.w, player.h, "white");
+  }
+
+  // ENEMIES
   enemies.forEach(e => {
-    ctx.fillStyle = e.isBoss ? "purple" : "red";
-    ctx.fillRect(e.x, e.y, e.w, e.h);
+
+    if (e.isBoss) {
+      // 👻 PULSING AURA
+      let pulse = Math.sin(Date.now() / 200) * 10 + 50;
+
+      ctx.fillStyle = "rgba(150, 0, 200, 0.25)";
+      ctx.beginPath();
+      ctx.arc(e.x + 20, e.y + 30, pulse, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 🌫️ EXTRA SHADOW LAYER
+      ctx.fillStyle = "rgba(80, 0, 120, 0.2)";
+      ctx.beginPath();
+      ctx.arc(e.x + 20, e.y + 30, pulse + 15, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 😈 SLIGHT JITTER (creepy movement)
+      let jitterX = (Math.random() - 0.5) * 2;
+      let jitterY = (Math.random() - 0.5) * 2;
+
+      drawStickman(
+        e.x + jitterX,
+        e.y + jitterY,
+        e.w,
+        e.h,
+        "purple"
+      );
+
+      // 👁️ GLOWING EYES
+      ctx.fillStyle = "pink";
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = "pink";
+
+      ctx.fillRect(e.x + 12, e.y + 15, 4, 4);
+      ctx.fillRect(e.x + 26, e.y + 15, 4, 4);
+
+      ctx.shadowBlur = 0;
+    } 
+    else {
+      drawStickman(e.x, e.y, e.w, e.h, "red");
+    }
+
+    // HEALTH BAR
+    ctx.fillStyle = "black";
+    ctx.fillRect(e.x, e.y - 8, e.w, 4);
+
+    ctx.fillStyle = e.isBoss ? "purple" : "lime";
+    ctx.fillRect(e.x, e.y - 8, (e.hp / e.maxHp) * e.w, 4);
   });
 
-  ctx.fillStyle = "white";
-  ctx.fillRect(player.x, player.y, player.w, player.h);
+  // ATTACK EFFECT
+  if (attackTimer > 0) {
+    ctx.fillStyle = "rgba(255,255,0,0.3)";
+    ctx.beginPath();
+    ctx.arc(player.x + 10, player.y + 20, 70, 0, Math.PI * 2);
+    ctx.fill();
+    attackTimer--;
+  }
 
+  // DAMAGE TEXT
+  ctx.fillStyle = "yellow";
+  ctx.font = "14px Arial";
+  damageTexts.forEach(d => {
+    ctx.fillText(d.text, d.x, d.y);
+  });
+
+  // UI
   ctx.fillStyle = "white";
+  ctx.font = "18px Arial";
+  ctx.fillText("Wave: " + wave, 10, 20);
+  ctx.fillText("HP: " + player.hp, 10, 40);
+
+  // BOSS TEXT
+  if (wave % 10 === 0) {
+    ctx.fillStyle = "purple";
+    ctx.font = "24px Arial";
+    ctx.fillText("BOSS WAVE", canvas.width / 2 - 80, 40);
+  }
+  // enemies
+  enemies.forEach(e => {
+    if (e.isBoss) {
+      // aura
+      ctx.fillStyle = "rgba(150,0,200,0.2)";
+      ctx.beginPath();
+      ctx.arc(e.x + 20, e.y + 30, 50, 0, Math.PI * 2);
+      ctx.fill();
+
+      drawStickman(e.x, e.y, e.w, e.h, "purple");
+    } else {
+      drawStickman(e.x, e.y, e.w, e.h, "red");
+    }
+
+    // health bar
+    ctx.fillStyle = "black";
+    ctx.fillRect(e.x, e.y - 8, e.w, 4);
+
+    ctx.fillStyle = e.isBoss ? "purple" : "lime";
+    ctx.fillRect(e.x, e.y - 8, (e.hp / e.maxHp) * e.w, 4);
+  });
+
+  // attack effect
+  if (attackTimer > 0) {
+    ctx.fillStyle = "rgba(255,255,0,0.3)";
+    ctx.beginPath();
+    ctx.arc(player.x + 10, player.y + 20, 70, 0, Math.PI * 2);
+    ctx.fill();
+    attackTimer--;
+  }
+
+  // UI
+  ctx.fillStyle = "white";
+  ctx.font = "18px Arial";
   ctx.fillText("Wave: " + wave, 10, 20);
   ctx.fillText("HP: " + player.hp, 10, 40);
 }
@@ -213,7 +363,6 @@ joystick.addEventListener("touchend", () => {
   stick.style.top = "30px";
 });
 
-// 🔥 FIXED ATTACK BUTTON
 attackBtn.addEventListener("touchstart", function(e) {
   e.preventDefault();
   attack();
