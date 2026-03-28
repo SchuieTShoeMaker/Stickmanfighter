@@ -231,13 +231,15 @@ player.onGround = false;
   player.vy += 0.5;
   player.y += player.vy;
 
-  if (player.y + player.h > ground()) {
-    player.y = ground() - player.h;
-    player.vy = 0;
-if (player.vy >= 0) {
-  player.onGround = true;
-}
+if (player.y + player.h > ground()) {
+  player.y = ground() - player.h;
+
+  if (player.vy >= 0) {
+    player.onGround = true;
   }
+
+  player.vy = 0;
+}
 
 if (keys["w"] && player.onGround && jumpCooldown === 0) {
   player.vy = -player.jump;
