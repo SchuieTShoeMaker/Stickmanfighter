@@ -13,15 +13,9 @@ const ground = () => canvas.height - 50;
 
 // ===== PLAYER =====
 const player = {
-  x: 100,
-  y: 100,
-  w: 20,
-  h: 40,
-  hp: 100,
-  vx: 0,
-  vy: 0,
-  speed: 3,
-  jump: 10,
+  x: 100, y: 100, w: 20, h: 40,
+  hp: 100, vx: 0, vy: 0,
+  speed: 3, jump: 10,
   onGround: false,
   walkAnim: 0,
   attackAnim: 0
@@ -74,19 +68,15 @@ let joyX = 0;
 function spawnWave() {
   enemies = [];
 
-  // unlock system
   if (wave >= 3) unlockedEnemies.fast = true;
   if (wave >= 6) unlockedEnemies.tank = true;
   if (wave >= 9) unlockedEnemies.ranged = true;
 
-  // boss
   if (wave % 5 === 0) {
     enemies.push({
       x: canvas.width / 2,
-      w: 60,
-      h: 100,
-      hp: 300,
-      maxHp: 300,
+      w: 60, h: 100,
+      hp: 300, maxHp: 300,
       speed: 1,
       isBoss: true,
       stage: 1,
@@ -107,41 +97,26 @@ function spawnWave() {
 
     let type = types[Math.floor(Math.random() * types.length)];
 
-    let enemy = {
+    let e = {
       x: Math.random() * canvas.width,
-      w: 20,
-      h: 40,
-      hp: 30,
-      maxHp: 30,
+      w: 20, h: 40,
+      hp: 30, maxHp: 30,
       speed: 1.5,
+      type,
       isBoss: false,
-      type: type,
       poison: 0,
       dead: false,
       attackCooldown: 0,
       attackAnim: 0,
       walkAnim: 0,
-      shootCooldown: 0
+      shootCooldown: 60
     };
 
-    if (type === "fast") {
-      enemy.speed = 3;
-      enemy.hp = 20;
-    }
+    if (type === "fast") { e.speed = 3; e.hp = 20; }
+    if (type === "tank") { e.hp = 80; e.maxHp = 80; e.speed = 0.8; }
+    if (type === "ranged") { e.hp = 25; e.speed = 1.2; }
 
-    if (type === "tank") {
-      enemy.hp = 80;
-      enemy.maxHp = 80;
-      enemy.speed = 0.8;
-    }
-
-    if (type === "ranged") {
-      enemy.hp = 25;
-      enemy.speed = 1.2;
-      enemy.shootCooldown = 60;
-    }
-
-    enemies.push(enemy);
+    enemies.push(e);
   }
 }
 
@@ -149,14 +124,15 @@ function spawnWave() {
 function attack() {
   if (attackCooldown > 0) return;
 
-  player.attackAnim = 10;
   attackCooldown = attackCooldownMax;
+  player.attackAnim = 10;
 
   if (weapon === "sword") {
     abilityTimer = 10;
     enemies.forEach(e => {
       if (Math.abs(e.x - player.x) < 70) {
         e.hp -= playerDamage;
+        if (hasPoison) e.poison = 60;
       }
     });
   }
@@ -164,8 +140,7 @@ function attack() {
   if (weapon === "dagger") {
     isDashing = true;
     abilityTimer = 10;
-    let dir = player.vx >= 0 ? 1 : -1;
-    player.vx = dir * 12;
+    player.vx = (player.vx >= 0 ? 1 : -1) * 12;
   }
 
   if (weapon === "hammer") {
@@ -179,6 +154,32 @@ function attack() {
   }
 }
 
+// ===== SHOP =====
+function buyDamage() {
+  if (money >= 50) { money -= 50; playerDamage += 5; }
+}
+function buyArmor() {
+  if (money >= 100) { money -= 100; playerArmor += 1; }
+}
+function buyPoison() {
+  if (money >= 150 && !hasPoison) {
+    money -= 150;
+    hasPoison = true;
+  }
+}
+function setWeapon(w) {
+  weapon = w;
+  if (w === "sword") attackCooldownMax = 20;
+  if (w === "dagger") attackCooldownMax = 10;
+  if (w === "hammer") attackCooldownMax = 35;
+}
+function continueGame() {
+  inShop = false;
+  document.getElementById("shop").style.display = "none";
+  wave++;
+  spawnWave();
+}
+
 // ===== UPDATE =====
 function update() {
   if (inShop) return;
@@ -187,14 +188,13 @@ function update() {
   if (abilityTimer > 0) abilityTimer--;
 
   player.vx = 0;
+  if (keys["a"]) player.vx = -player.speed;
+  if (keys["d"]) player.vx = player.speed;
 
-  if (keys["ArrowLeft"] || keys["a"]) player.vx = -player.speed;
-  if (keys["ArrowRight"] || keys["d"]) player.vx = player.speed;
-
-  player.vx += joyX * 0.05;
   player.x += player.vx;
 
   if (Math.abs(player.vx) > 0.1) player.walkAnim += 0.2;
+  else player.walkAnim = 0;
 
   player.vy += 0.5;
   player.y += player.vy;
@@ -203,21 +203,11 @@ function update() {
     player.y = ground() - player.h;
     player.vy = 0;
     player.onGround = true;
-  } else player.onGround = false;
-
-  if ((keys["ArrowUp"] || keys["w"]) && player.onGround) {
-    player.vy = -player.jump;
   }
+
+  if (keys["w"] && player.onGround) player.vy = -player.jump;
 
   if (isDashing && abilityTimer <= 0) isDashing = false;
-
-  if (isDashing) {
-    enemies.forEach(e => {
-      if (Math.abs(e.x - player.x) < 40) {
-        e.hp -= playerDamage * 0.5;
-      }
-    });
-  }
 
   // ===== ENEMIES =====
   enemies.forEach(e => {
@@ -225,33 +215,33 @@ function update() {
     e.walkAnim += 0.15;
 
     if (e.isBoss) {
-      let hpPercent = e.hp / e.maxHp;
-      if (hpPercent < 0.66 && e.stage === 1) { e.stage = 2; e.speed = 2; }
-      if (hpPercent < 0.33 && e.stage === 2) { e.stage = 3; e.speed = 3; }
+      let hp = e.hp / e.maxHp;
+      if (hp < 0.66) e.stage = 2;
+      if (hp < 0.33) e.stage = 3;
     }
 
     if (e.x < player.x) e.x += e.speed;
     else e.x -= e.speed;
 
-    // ranged attack
+    // ranged
     if (e.type === "ranged") {
       if (e.shootCooldown <= 0) {
         projectiles.push({
           x: e.x,
           y: e.y + 20,
-          vx: player.x > e.x ? 4 : -4
+          vx: player.x > e.x ? 4 : -4,
+          hit: false
         });
         e.shootCooldown = 90;
       } else e.shootCooldown--;
     }
 
+    // damage
     if (Math.abs(e.x - player.x) < 20 && e.attackCooldown <= 0) {
-      let damage = e.isBoss ? (e.stage === 3 ? 20 : 12) : 2;
+      let dmg = e.isBoss ? (e.stage === 3 ? 20 : 12) : 2;
+      dmg = Math.max(0, dmg - playerArmor);
 
-      damage -= playerArmor;
-      if (damage < 0) damage = 0;
-
-      player.hp -= damage;
+      player.hp -= dmg;
       playerHitTimer = 10;
 
       let dir = player.x > e.x ? 1 : -1;
@@ -287,10 +277,11 @@ function update() {
         Math.abs(p.y - player.y) < 20) {
       player.hp -= 5;
       shake = 5;
+      p.hit = true;
     }
   });
 
-  projectiles = projectiles.filter(p => p.x > 0 && p.x < canvas.width);
+  projectiles = projectiles.filter(p => !p.hit && p.x > 0 && p.x < canvas.width);
 
   // ===== SHOP =====
   if (enemies.length === 0 && !inShop) {
@@ -305,119 +296,124 @@ function update() {
   }
 }
 
+// ===== DRAW CATNAP =====
+function drawCatnap(e) {
+  let x = e.x;
+  let y = e.y + Math.sin(Date.now()/200)*5;
+
+  ctx.fillStyle = "rgba(80,0,120,0.3)";
+  ctx.beginPath();
+  ctx.arc(x+30,y+50,70,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle = "#4b0082";
+  ctx.beginPath();
+  ctx.ellipse(x+30,y+50,25,35,0,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle = "black";
+  ctx.beginPath();
+  ctx.arc(x+20,y+40,6,0,Math.PI*2);
+  ctx.arc(x+40,y+40,6,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle = "hotpink";
+  ctx.beginPath();
+  ctx.arc(x+20,y+40,2,0,Math.PI*2);
+  ctx.arc(x+40,y+40,2,0,Math.PI*2);
+  ctx.fill();
+}
+
 // ===== DRAW STICKMAN =====
-function drawStickman(x, y, w, h, color, walk, attack) {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
-
-  let swing = Math.sin(walk) * 6;
+function drawStickman(x,y,w,h,color,walk,attack){
+  ctx.strokeStyle=color;
+  let swing=Math.sin(walk)*6;
 
   ctx.beginPath();
-  ctx.arc(x + w/2, y + 10, 6, 0, Math.PI*2);
+  ctx.arc(x+w/2,y+10,6,0,Math.PI*2);
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.moveTo(x + w/2, y + 16);
-  ctx.lineTo(x + w/2, y + 30);
-  ctx.stroke();
-
-  let armOffset = attack > 0 ? 10 : swing;
-
-  ctx.beginPath();
-  ctx.moveTo(x + w/2, y + 22);
-  ctx.lineTo(x + w/2 + armOffset, y + 22);
+  ctx.moveTo(x+w/2,y+16);
+  ctx.lineTo(x+w/2,y+30);
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.moveTo(x + w/2, y + 30);
-  ctx.lineTo(x + w/2 - swing, y + 40);
-  ctx.moveTo(x + w/2, y + 30);
-  ctx.lineTo(x + w/2 + swing, y + 40);
+  ctx.moveTo(x+w/2,y+22);
+  ctx.lineTo(x+w/2+(attack>0?10:swing),y+22);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x+w/2,y+30);
+  ctx.lineTo(x+w/2-swing,y+40);
+  ctx.moveTo(x+w/2,y+30);
+  ctx.lineTo(x+w/2+swing,y+40);
   ctx.stroke();
 }
 
 // ===== DRAW =====
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  let shakeX = (Math.random() - 0.5) * shake;
-  let shakeY = (Math.random() - 0.5) * shake;
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
   ctx.save();
-  ctx.translate(shakeX, shakeY);
+  ctx.translate((Math.random()-0.5)*shake,(Math.random()-0.5)*shake);
+  if(shake>0)shake--;
 
-  if (shake > 0) shake--;
+  ctx.fillStyle="#222";
+  ctx.fillRect(0,ground(),canvas.width,50);
 
-  ctx.fillStyle = "#222";
-  ctx.fillRect(0, ground(), canvas.width, 50);
-
-  // dash effect
-  if (isDashing) {
-    ctx.fillStyle = "rgba(0,255,255,0.3)";
-    ctx.fillRect(player.x - 10, player.y, 40, player.h);
-  }
-
-  // slam effect
-  if (weapon === "hammer" && abilityTimer > 0) {
-    ctx.fillStyle = "rgba(255,200,0,0.3)";
-    ctx.beginPath();
-    ctx.arc(player.x + 10, player.y + 30, 80, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  drawStickman(
-    player.x,
-    player.y,
-    player.w,
-    player.h,
-    playerHitTimer > 0 ? "red" : "white",
+  // player
+  drawStickman(player.x,player.y,player.w,player.h,
+    playerHitTimer>0?"red":"white",
     player.walkAnim,
     player.attackAnim
   );
 
-  if (player.attackAnim > 0) player.attackAnim--;
+  if(player.attackAnim>0)player.attackAnim--;
 
-  enemies.forEach(e => {
-    let color = "red";
-    if (e.type === "fast") color = "orange";
-    if (e.type === "tank") color = "blue";
-    if (e.type === "ranged") color = "yellow";
-    if (e.isBoss) color = "purple";
+  // enemies
+  enemies.forEach(e=>{
+    if(e.isBoss) drawCatnap(e);
+    else{
+      let color="red";
+      if(e.type==="fast") color="orange";
+      if(e.type==="tank") color="blue";
+      if(e.type==="ranged") color="yellow";
 
-    drawStickman(e.x, e.y, e.w, e.h, color, e.walkAnim, e.attackAnim);
-  });
+      drawStickman(e.x,e.y,e.w,e.h,color,e.walkAnim,e.attackAnim);
 
-  // projectiles
-  ctx.fillStyle = "yellow";
-  projectiles.forEach(p => {
-    ctx.fillRect(p.x, p.y, 6, 6);
+      if(e.poison>0){
+        ctx.fillStyle="rgba(0,255,0,0.3)";
+        ctx.fillRect(e.x,e.y,e.w,e.h);
+      }
+    }
   });
 
   ctx.restore();
 
-  ctx.fillStyle = "white";
-  ctx.fillText("Wave: " + wave, 10, 20);
-  ctx.fillText("HP: " + player.hp, 10, 40);
-  ctx.fillText("Money: $" + money, 10, 60);
+  ctx.fillStyle="white";
+  ctx.fillText("Wave: "+wave,10,20);
+  ctx.fillText("HP: "+player.hp,10,40);
+  ctx.fillText("Money: $"+money,10,60);
 }
 
 // ===== LOOP =====
-function gameLoop() {
+function gameLoop(){
   update();
   draw();
   requestAnimationFrame(gameLoop);
 }
 
 // ===== CONTROLS =====
-attackBtn.addEventListener("touchstart", e => {
+attackBtn.addEventListener("touchstart",e=>{
   e.preventDefault();
   attack();
-}, { passive: false });
+},{passive:false});
 
-jumpBtn.addEventListener("touchstart", e => {
+jumpBtn.addEventListener("touchstart",e=>{
   e.preventDefault();
-  if (player.onGround) player.vy = -player.jump;
-}, { passive: false });
+  if(player.onGround) player.vy=-player.jump;
+},{passive:false});
 
 // ===== START =====
 spawnWave();
