@@ -1,35 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Stickman Game</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: black;
-        }
-
-        canvas {
-            display: block;
-        }
-
-        #attackBtn {
-            position: fixed;
-            bottom: 40px;
-            right: 40px;
-            padding: 20px;
-            background: red;
-            color: white;
-            font-size: 20px;
-            border-radius: 50%;
-        }
-    </style>
+  <title>Stickman Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+    }
+  </style>
 </head>
+
 <body>
+  <canvas id="game"></canvas>
+  <script src="script.js"></script>
 
-<canvas id="game"></canvas>
-<div id="attackBtn">⚔️</div>
-
-<script src="script.js"></script>
 </body>
 </html>
