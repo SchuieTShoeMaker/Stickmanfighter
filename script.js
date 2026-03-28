@@ -21,7 +21,10 @@ const player = {
 // ===== GAME STATE =====
 let enemies = [];
 let wave = 1;
+
 let attackTimer = 0;
+let attackCooldown = 0;
+
 let damageTexts = [];
 
 // ===== SPAWN ENEMIES =====
@@ -42,7 +45,10 @@ function spawnWave() {
 
 // ===== ATTACK =====
 function attack() {
+  if (attackCooldown > 0) return;
+
   attackTimer = 10;
+  attackCooldown = 20;
 
   enemies.forEach(enemy => {
     if (
@@ -52,7 +58,6 @@ function attack() {
       enemy.hp -= 10;
       enemy.hitTimer = 5;
 
-      // Damage text
       damageTexts.push({
         x: enemy.x + enemy.w / 2,
         y: enemy.y,
@@ -69,7 +74,7 @@ function update() {
   player.x += joyX * 0.2;
   player.y += joyY * 0.2;
 
-  // Keep inside screen
+  // Clamp player inside screen
   player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
   player.y = Math.max(0, Math.min(canvas.height - player.h, player.y));
 
@@ -95,12 +100,14 @@ function update() {
     spawnWave();
   }
 
+  // Attack cooldown
+  if (attackCooldown > 0) attackCooldown--;
+
   // Damage text animation
   damageTexts.forEach(d => {
     d.y -= 1;
     d.life--;
   });
-
   damageTexts = damageTexts.filter(d => d.life > 0);
 }
 
@@ -112,8 +119,9 @@ function draw() {
   ctx.fillStyle = "lime";
   ctx.fillRect(player.x, player.y, player.w, player.h);
 
-  // Enemies + health bars + hit flash
+  // Enemies
   enemies.forEach(e => {
+    // Hit flash
     if (e.hitTimer > 0) {
       ctx.fillStyle = "white";
       e.hitTimer--;
@@ -144,6 +152,7 @@ function draw() {
       Math.PI * 2
     );
     ctx.fill();
+
     attackTimer--;
   }
 
@@ -157,8 +166,8 @@ function draw() {
   // UI
   ctx.fillStyle = "white";
   ctx.font = "20px Arial";
-  ctx.fillText("Wave: " + wave, 10, 20);
-  ctx.fillText("HP: " + player.hp, 10, 45);
+  ctx.fillText(`Wave: ${wave}`, 10, 20);
+  ctx.fillText(`HP: ${player.hp}`, 10, 45);
 }
 
 // ===== GAME LOOP =====
@@ -200,6 +209,7 @@ joystick.addEventListener("touchmove", e => {
 joystick.addEventListener("touchend", () => {
   joyX = 0;
   joyY = 0;
+
   stick.style.left = "30px";
   stick.style.top = "30px";
 });
