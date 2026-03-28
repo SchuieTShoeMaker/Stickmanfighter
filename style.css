@@ -54,3 +54,6 @@ canvas {
   font-size: 24px;
   padding: 20px;
 }
+#controls {
+  bottom: 40px;
+}
