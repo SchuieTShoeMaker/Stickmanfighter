@@ -1,49 +1,45 @@
 body {
   margin: 0;
-  background: #111;
+  overflow: hidden;
+  background: black;
 }
 
+/* Canvas */
 canvas {
   display: block;
-  margin: 0 auto;
-  background: #222;
-  width: 100vw;
-  height: 60vh;
-}
-
-/* Controls container */
-#controls {
-  position: fixed;
-  bottom: 40px; /* 👈 your spacing */
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 30px;
 }
 
 /* Joystick */
 #joystick {
+  position: fixed;
+  bottom: 30px;
+  left: 30px;
   width: 100px;
   height: 100px;
-  background: #333;
+  background: rgba(255,255,255,0.1);
   border-radius: 50%;
-  position: relative;
-  touch-action: none;
 }
 
-/* Stick inside joystick */
 #stick {
+  position: absolute;
   width: 40px;
   height: 40px;
-  background: #aaa;
+  background: rgba(255,255,255,0.6);
   border-radius: 50%;
-  position: absolute;
   left: 30px;
   top: 30px;
 }
 
-/* Attack button */
+/* Attack Button */
 #attackBtn {
+  position: fixed;
+  bottom: 40px;
+  right: 30px;
+  width: 70px;
+  height: 70px;
   font-size: 24px;
-  padding: 20px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255,255,255,0.2);
+  color: white;
 }
