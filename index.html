@@ -1,35 +1,109 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stickman Combat</title>
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+body {
+  margin: 0;
+  overflow: hidden;
+  background: linear-gradient(#87CEEB, #b0d8f0);
+  font-family: sans-serif;
+}
 
-  <title>Stickman Combat</title>
+/* ===== CANVAS ===== /
+canvas {
+  display: block;
+}
 
-  <link rel="stylesheet" href="style.css">
+/ ===== JOYSTICK ===== /
+#joystick {
+  position: fixed;
+  bottom: 30px;
+  left: 30px;
+  width: 100px;
+  height: 100px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 50%;
+}
+
+#stick {
+  position: absolute;
+  left: 30px;
+  top: 30px;
+  width: 40px;
+  height: 40px;
+  background: white;
+  border-radius: 50%;
+}
+
+/ ===== BUTTONS ===== /
+.btn {
+  position: fixed;
+  bottom: 40px;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+#jumpBtn { right: 120px; }
+#attackBtn { right: 40px; }
+
+/ ===== SHOP UI ===== */
+#shop {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  width: 320px;
+  padding: 25px;
+
+  background: linear-gradient(145deg, #f0f4f8, #d9e2ec);
+  border-radius: 20px;
+
+  box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+
+  text-align: center;
+  z-index: 1000;
+}
+
+#shop h2 {
+  margin-bottom: 10px;
+}
+
+#shop p {
+  margin-bottom: 15px;
+}
+
+.shopBtn {
+  margin: 8px 0;
+  padding: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  background: #7fc8a9;
+  color: white;
+  font-size: 16px;
+  transition: 0.2s;
+}
+
+.shopBtn:active {
+  transform: scale(0.95);
+}
+</style>
 </head>
+
 <body>
 
 <canvas id="game"></canvas>
-
-<!-- SHOP -->
-<div id="shop">
-  <h2>Shop</h2>
-  <p>Money: $<span id="shopMoney">0</span></p>
-
-  <button onclick="buyDamage()">+Damage (50)</button>
-  <button onclick="buyArmor()">+Armor (100)</button>
-  <button onclick="buyPoison()">Poison (150)</button>
-
-  <h3>Weapons</h3>
-  <button onclick="setWeapon('sword')">Sword</button>
-  <button onclick="setWeapon('dagger')">Dagger</button>
-  <button onclick="setWeapon('hammer')">Hammer</button>
-
-  <br><br>
-  <button onclick="continueGame()">Continue</button>
-</div>
 
 <!-- JOYSTICK -->
 <div id="joystick">
@@ -37,15 +111,33 @@
 </div>
 
 <!-- BUTTONS -->
-<button id="attackBtn">⚔️</button>
-<button id="jumpBtn">⬆️</button>
+<div id="jumpBtn" class="btn">⬆️</div>
+<div id="attackBtn" class="btn">⚔️</div>
 
-<!-- GAME OVER -->
-<div id="gameOver">
-  <h1>Game Over</h1>
-  <button onclick="location.reload()">Restart</button>
+<!-- SHOP -->
+<div id="shop">
+  <h2>🛒 Shop</h2>
+  <p id="shopMoney">Money: $0</p>
+
+  <button class="shopBtn" onclick="buyDamage()">+Damage (50)</button>
+  <button class="shopBtn" onclick="buyArmor()">+Armor (100)</button>
+  <button class="shopBtn" onclick="buyPoison()">Poison (150)</button>
+
+  <h3>Weapons</h3>
+  <button class="shopBtn" onclick="setWeapon('sword')">Sword</button>
+  <button class="shopBtn" onclick="setWeapon('dagger')">Dagger</button>
+  <button class="shopBtn" onclick="setWeapon('hammer')">Hammer</button>
+
+  <br><br>
+  <button class="shopBtn" onclick="continueGame()">Continue</button>
 </div>
 
-<script src="script.js"></script>
+<script>
+let gameStarted = false;
+
+
+
+</script>
+
 </body>
-</html>
+</html
