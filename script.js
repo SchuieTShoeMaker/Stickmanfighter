@@ -241,7 +241,7 @@ if (player.y + player.h > ground()) {
   player.vy = 0;
 }
 
-if (keys["w"] && player.onGround && jumpCooldown === 0) {
+if (keys["w"] && player.onGround && jumpCooldown <= 0) {
   player.vy = -player.jump;
   player.onGround = false;
   jumpCooldown = 10;
