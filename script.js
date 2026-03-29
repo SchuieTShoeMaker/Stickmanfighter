@@ -399,7 +399,8 @@ function drawStickman(x,y,w,h,color,walk,attack){
 // ===== DRAW =====
 function draw(){
 ctx.clearRect(0,0,canvas.width,canvas.height);
-
+ctx.fillStyle = "red";
+ctx.fillRect(0, 0, 10, 10);
 ctx.save();
 
 // 🔥 APPLY CAMERA OFFSET FIRST
