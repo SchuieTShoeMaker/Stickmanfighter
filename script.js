@@ -437,6 +437,20 @@ function draw(){
   ctx.restore();
 
   ctx.fillStyle="white";
+  // ===== PLAYER HEALTH BAR =====
+let barWidth = 200;
+let barHeight = 20;
+let hpPercent = player.hp / 100;
+
+ctx.fillStyle = "red";
+ctx.fillRect(10, 70, barWidth, barHeight);
+
+ctx.fillStyle = "lime";
+ctx.fillRect(10, 70, barWidth * hpPercent, barHeight);
+
+ctx.strokeStyle = "white";
+ctx.strokeRect(10, 70, barWidth, barHeight);
+
   ctx.fillText("Wave: "+wave,10,20);
   ctx.fillText("HP: "+player.hp,10,40);
   ctx.fillText("Money: $"+money,10,60);
