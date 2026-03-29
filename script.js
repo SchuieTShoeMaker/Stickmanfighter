@@ -459,7 +459,7 @@ attackBtn.addEventListener("touchstart",e=>{
 jumpBtn.addEventListener("touchstart", e => {
   e.preventDefault();
 
-  if (player.onGround && jumpCooldown === 0) {
+  if (player.onGround && jumpCooldown <= 0) {
     player.vy = -player.jump;
     player.onGround = false;
     jumpCooldown = 10;
