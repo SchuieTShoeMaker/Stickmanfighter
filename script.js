@@ -444,6 +444,11 @@ ctx.translate((Math.random()-0.5)*shake,(Math.random()-0.5)*shake);
   });
 
   ctx.restore();
+  if (inShop) {
+  // dark transparent overlay
+  ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
 
   ctx.fillStyle="white";
   // ===== PLAYER HEALTH BAR =====
