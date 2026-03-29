@@ -398,10 +398,15 @@ function drawStickman(x,y,w,h,color,walk,attack){
 
 // ===== DRAW =====
 function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  ctx.save();
-  ctx.translate((Math.random()-0.5)*shake,(Math.random()-0.5)*shake);
+ctx.save();
+
+// 🔥 APPLY CAMERA OFFSET FIRST
+ctx.translate(0, -150);
+
+// 🔥 THEN APPLY SHAKE ON TOP
+ctx.translate((Math.random()-0.5)*shake,(Math.random()-0.5)*shake);
   if(shake>0)shake--;
 
   ctx.fillStyle="#222";
