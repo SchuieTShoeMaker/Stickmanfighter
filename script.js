@@ -481,5 +481,8 @@ jumpBtn.addEventListener("touchstart", e => {
 }, { passive: false });
 
 // ===== START =====
-spawnWave();
-gameLoop();
+if (!gameStarted) {
+  gameStarted = true;
+  spawnWave();
+  gameLoop();
+}
