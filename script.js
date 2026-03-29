@@ -403,7 +403,7 @@ ctx.clearRect(0,0,canvas.width,canvas.height);
 ctx.save();
 
 // 🔥 APPLY CAMERA OFFSET FIRST
-ctx.translate(0, -150);
+ctx.translate(0, -80);
 
 // 🔥 THEN APPLY SHAKE ON TOP
 ctx.translate((Math.random()-0.5)*shake,(Math.random()-0.5)*shake);
