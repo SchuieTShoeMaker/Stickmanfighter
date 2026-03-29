@@ -29,6 +29,8 @@ let enemies = [];
 let projectiles = [];
 let wave = 1;
 
+let gameStarted = false;
+
 let money = 0;
 let playerDamage = 15;
 let playerArmor = 0;
