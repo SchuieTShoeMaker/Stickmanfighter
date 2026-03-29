@@ -9,7 +9,7 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
-const ground = () => canvas.height - 120;
+const ground = () => canvas.height - 80;
 
 // ===== PLAYER =====
 const player = {
