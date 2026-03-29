@@ -279,7 +279,6 @@ if (keys["w"] && player.onGround && jumpCooldown <= 0) {
     // damage
 if (
   Math.abs(e.x - player.x) < 20 &&
-  Math.abs(e.y - player.y) < 30 &&
   player.onGround && 
   e.attackCooldown <= 0
 ) {
